@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useWallet } from '@meddleware/wallet-adapter'
+import { getReadClient } from '../lib/readClient.js'
 import type { OwnedBlob, WalrusNetwork } from '../lib/walrus.js'
 import type { Network } from '../lib/types.js'
 import AppNotice from './AppNotice.vue'
@@ -48,7 +49,6 @@ async function load(): Promise<void> {
     const { createWalrusClient, walrusBlobUrl, fetchOwnedWalrusBlobs } = await import(
       '../lib/walrus.js'
     )
-    const { getReadClient } = await import('../lib/readClient.js')
     const suiClient = getReadClient(props.network as Network)
     const client = createWalrusClient(props.network)
     const raw = await fetchOwnedWalrusBlobs(suiClient, client, addr)
