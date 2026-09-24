@@ -1,0 +1,64 @@
+# Real-chain deploy e2e for blockchain/sui/apps/token-deployer-ui.
+#
+# MANUAL ONLY (workflow_dispatch). This workflow publishes a REAL token and spends REAL SUI, so
+# it is never triggered on push or pull_request — it must be started by hand and mainnet requires
+# an explicit confirmation input. The automatic gates for the package remain `npm test` (Vitest)
+# and `npm run test:e2e` (Cypress, fully mocked), which should live in a separate always-on CI job.
+#
+# Secrets required (repository or environment secrets):
+#   SUI_PRIV_TESTNET / SUI_PRIV_MAINNET  — bech32 suiprivkey1… for a funded deployer key.
+#   FEE_TREASURY_TESTNET / FEE_TREASURY_MAINNET — operator treasury address (fee recipient).
+#   RPC_TESTNET / RPC_MAINNET (optional) — JSON-RPC endpoint override (public testnet is gRPC-only).
+
+name: token-deployer real-chain e2e
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        description: Target network (mainnet publishes a REAL token and spends REAL SUI)
+        required: true
+        default: testnet
+        type: choice
+        options:
+          - testnet
+          - mainnet
+      confirm_mainnet:
+        description: Type "1" to confirm a mainnet run (ignored for testnet)
+        required: false
+        default: ""
+
+defaults:
+  run:
+    working-directory: blockchain/sui/apps/token-deployer-ui
+
+jobs:
+  deploy-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run real-chain deploy e2e
+        env:
+          # Select the funded key + treasury + RPC for the chosen network.
+          SUI_PRIV: ${{ inputs.network == 'mainnet' && secrets.SUI_PRIV_MAINNET || secrets.SUI_PRIV_TESTNET }}
+          VITE_FEE_TREASURY_TESTNET: ${{ secrets.FEE_TREASURY_TESTNET }}
+          VITE_FEE_TREASURY_MAINNET: ${{ secrets.FEE_TREASURY_MAINNET }}
+          VITE_RPC_TESTNET: ${{ secrets.RPC_TESTNET }}
+          VITE_RPC_MAINNET: ${{ secrets.RPC_MAINNET }}
+          E2E_RPC: ${{ inputs.network == 'mainnet' && secrets.RPC_MAINNET || secrets.RPC_TESTNET }}
+          E2E_FEE_ADDR: ${{ inputs.network == 'mainnet' && secrets.FEE_TREASURY_MAINNET || secrets.FEE_TREASURY_TESTNET }}
+          # Mainnet fail-safe: only proceeds when the operator typed "1".
+          E2E_MAINNET_CONFIRM: ${{ inputs.network == 'mainnet' && inputs.confirm_mainnet || '' }}
+          # CHROME_PATH intentionally unset — the harness falls back to Playwright's bundled Chromium.
+        run: npm run "e2e:${{ inputs.network }}"
