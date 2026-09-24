@@ -32,7 +32,7 @@ const SOURCE_OF: Record<string, string> = {
   'Move.toml': 'Move.toml',
   'source.move': 'sources/sui_token_template.move',
   'scripts/publish.sh': 'templates/publish.sh',
-  '.gitignore': 'templates/.gitignore',
+  '.gitignore': 'templates/gitignore',
   'README.md': 'templates/README.md',
   'deployments.md': 'templates/deployments.md',
   'CLAUDE.md': 'templates/CLAUDE.md',

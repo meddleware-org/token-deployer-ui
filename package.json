@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@meddleware/wallet-adapter": "^0.0.7",
-    "@meddleware/walrus-relay": "^0.1.0",
+    "@meddleware/walrus-relay": "^0.1.16",
     "@mysten/bcs": "~2.1.0",
     "@mysten/move-bytecode-template": "~0.4.0",
     "@mysten/sui": "^2.31.0",
@@ -59,7 +59,7 @@
     "vue-tsc": "~3.3.0"
   },
   "optionalDependencies": {
-    "@meddleware/sui-token-template": "^1.0.0"
+    "@meddleware/sui-token-template": "^1.0.1"
   },
   "engines": {
     "node": "^22.18.0 || >=24.12.0"

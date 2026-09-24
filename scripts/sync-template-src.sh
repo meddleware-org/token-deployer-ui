@@ -25,7 +25,7 @@ const files = {
   'Move.toml': read('Move.toml'),
   'source.move': read('sources/sui_token_template.move'),
   'scripts/publish.sh': read('templates/publish.sh'),
-  '.gitignore': read('templates/.gitignore'),
+  '.gitignore': read('templates/gitignore'),
   'README.md': read('templates/README.md'),
   'deployments.md': read('templates/deployments.md'),
   'CLAUDE.md': read('templates/CLAUDE.md'),
