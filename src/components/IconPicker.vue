@@ -14,7 +14,7 @@ import {
 } from '../lib/accessGate.js'
 import type { WalrusNetwork } from '../lib/walrus.js'
 import type { Network } from '../lib/types.js'
-import { UiNotice, UiFieldHint } from '@meddleware/ui'
+import { UiNotice, UiFieldHint, UiSegmentedControl } from '@meddleware/ui'
 import WalrusBlobBrowser from './WalrusBlobBrowser.vue'
 import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url'
 
@@ -76,7 +76,7 @@ async function purchaseAccess(): Promise<void> {
   }
 }
 
-const tab = ref<'url' | 'upload' | 'browse'>('url')
+const tab = ref('url')
 
 // Upload state
 const uploading = ref(false)
@@ -228,26 +228,16 @@ function onBrowseSelect(url: string): void {
   <fieldset class="icon-picker">
     <legend>Icon <span class="hint">(optional)</span></legend>
 
-    <div class="icon-tabs" role="group" aria-label="Icon source">
-      <label :class="{ active: tab === 'url' }">
-        <input type="radio" v-model="tab" value="url" />
-        URL
-      </label>
-      <label
-        :class="{ active: tab === 'upload', disabled: !isWalrusNetwork }"
-        :title="isWalrusNetwork ? undefined : 'Not available on localnet'"
-      >
-        <input type="radio" v-model="tab" value="upload" :disabled="!isWalrusNetwork" />
-        Upload to Walrus
-      </label>
-      <label
-        :class="{ active: tab === 'browse', disabled: !isWalrusNetwork }"
-        :title="isWalrusNetwork ? undefined : 'Not available on localnet'"
-      >
-        <input type="radio" v-model="tab" value="browse" :disabled="!isWalrusNetwork" />
-        My Walrus blobs
-      </label>
-    </div>
+    <UiSegmentedControl
+      v-model="tab"
+      :options="[
+        { id: 'url', label: 'URL' },
+        { id: 'upload', label: 'Upload to Walrus', disabled: !isWalrusNetwork, title: isWalrusNetwork ? undefined : 'Not available on localnet' },
+        { id: 'browse', label: 'My Walrus blobs', disabled: !isWalrusNetwork, title: isWalrusNetwork ? undefined : 'Not available on localnet' },
+      ]"
+      aria-label="Icon source"
+      style="margin-bottom: 0.75rem"
+    />
 
     <!-- URL panel -->
     <div v-show="tab === 'url'" class="icon-panel">
@@ -347,49 +337,6 @@ function onBrowseSelect(url: string): void {
 </template>
 
 <style scoped>
-.icon-tabs {
-  display: flex;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  overflow: hidden;
-  width: fit-content;
-  margin-bottom: 0.75rem;
-}
-
-.icon-tabs label {
-  display: flex;
-  align-items: center;
-  padding: 0.4rem 0.75rem;
-  cursor: pointer;
-  font-size: 0.875rem;
-  background: transparent;
-  border-right: 1px solid var(--border);
-  transition: background 0.15s, color 0.15s;
-  user-select: none;
-}
-
-.icon-tabs label:last-child {
-  border-right: none;
-}
-
-.icon-tabs label.active {
-  background: var(--accent);
-  color: var(--accent-contrast);
-}
-
-.icon-tabs label.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-.icon-tabs input[type='radio'] {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
 .icon-panel {
   padding-top: 0.5rem;
 }

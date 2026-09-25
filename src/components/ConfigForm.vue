@@ -8,8 +8,7 @@ import LicensePicker from './LicensePicker.vue'
 import IconPicker from './IconPicker.vue'
 import { UiFormField, UiSelect, UiFieldHint } from '@meddleware/ui'
 
-
-
+export type ConfigFormStep = 'identity' | 'token' | 'settings'
 
 const props = defineProps<{
   form: FormModel
@@ -17,8 +16,9 @@ const props = defineProps<{
   canProceed: boolean
   network: Network
   connected: boolean
+  formStep: ConfigFormStep
 }>()
-const emit = defineEmits<{ (e: 'submit'): void }>()
+const emit = defineEmits<{ (e: 'next'): void; (e: 'back'): void }>()
 
 const structPreview = computed(() => {
   const m = props.form.moduleName.trim()
@@ -42,68 +42,75 @@ function onBlur(key: string): void {
 </script>
 
 <template>
-  <form novalidate @submit.prevent="emit('submit')">
-    <fieldset>
-      <legend>Package identity <span class="permanent">(permanent)</span></legend>
-      <div class="grid2">
-        <UiFormField id="package" label="Package name" :error="visibleError('packageName')" v-slot="{ attrs }">
-          <input v-bind="attrs" v-model="form.packageName" placeholder="my_token" autocomplete="off" @blur="onBlur('packageName')" />
-        </UiFormField>
-        <UiFormField id="module" label="Module name" :error="visibleError('moduleName')" v-slot="{ attrs }">
-          <input v-bind="attrs" v-model="form.moduleName" placeholder="mytoken" autocomplete="off" @blur="onBlur('moduleName')" />
-        </UiFormField>
-      </div>
-      <p class="hint" aria-live="polite">
-        <template v-if="identifierError">
-          Fix the package and module names to preview the coin type.
-        </template>
-        <template v-else>
-          Coin type will be <span class="mono">{{ coinTypePreview }}</span
-          >. The witness struct <span class="mono">{{ structPreview }}</span> is derived from
-          the module name (a Sui requirement).
-        </template>
-      </p>
-    </fieldset>
+  <form novalidate @submit.prevent="emit('next')">
 
-    <fieldset>
-      <legend>Token details</legend>
-
-      <div class="grid2">
-        <UiFormField id="name" label="Token name" :error="visibleError('name')" v-slot="{ attrs }">
-          <input v-bind="attrs" v-model="form.name" autocomplete="off" @blur="onBlur('name')" />
-        </UiFormField>
-        <UiFormField id="symbol" label="Symbol" :error="visibleError('symbol')" v-slot="{ attrs }">
-          <input v-bind="attrs" v-model="form.symbol" autocomplete="off" @blur="onBlur('symbol')" />
-        </UiFormField>
-      </div>
-
-      <UiFormField id="description" label="Description" :error="visibleError('description')">
-        <template #label-suffix>&nbsp;<span class="hint">(optional)</span></template>
-        <template #default="{ attrs }">
-          <textarea v-bind="attrs" v-model="form.description" @blur="onBlur('description')" />
-        </template>
-      </UiFormField>
-
-      <UiFormField id="decimals" label="Decimals" :error="visibleError('decimals')">
-        <template #label-suffix>&nbsp;<span class="permanent">(permanent)</span></template>
-        <template #default="{ attrs }">
-          <input v-bind="attrs" v-model="form.decimals" inputmode="numeric" @blur="onBlur('decimals')" />
-        </template>
-      </UiFormField>
-
-      <IconPicker
-        v-model="form.iconUrl"
-        :network="network"
-        :connected="connected"
-        :error="visibleError('iconUrl')"
-        @blur="onBlur('iconUrl')"
-      />
-    </fieldset>
-
-    <details>
-      <summary>Advanced options</summary>
+    <!-- Step 1: Identity -->
+    <template v-if="formStep === 'identity'">
       <fieldset>
-        <legend class="visually-hidden">Advanced options</legend>
+        <legend>Package identity <span class="permanent">(permanent)</span></legend>
+        <div class="grid2">
+          <UiFormField id="package" label="Package name" :error="visibleError('packageName')" v-slot="{ attrs }">
+            <input v-bind="attrs" v-model="form.packageName" placeholder="my_token" autocomplete="off" @blur="onBlur('packageName')" />
+          </UiFormField>
+          <UiFormField id="module" label="Module name" :error="visibleError('moduleName')" v-slot="{ attrs }">
+            <input v-bind="attrs" v-model="form.moduleName" placeholder="mytoken" autocomplete="off" @blur="onBlur('moduleName')" />
+          </UiFormField>
+        </div>
+        <p class="hint" aria-live="polite">
+          <template v-if="identifierError">
+            Fix the package and module names to preview the coin type.
+          </template>
+          <template v-else>
+            Coin type will be <span class="mono">{{ coinTypePreview }}</span
+            >. The witness struct <span class="mono">{{ structPreview }}</span> is derived from
+            the module name (a Sui requirement).
+          </template>
+        </p>
+      </fieldset>
+    </template>
+
+    <!-- Step 2: Token -->
+    <template v-if="formStep === 'token'">
+      <fieldset>
+        <legend>Token details</legend>
+
+        <div class="grid2">
+          <UiFormField id="name" label="Token name" :error="visibleError('name')" v-slot="{ attrs }">
+            <input v-bind="attrs" v-model="form.name" autocomplete="off" @blur="onBlur('name')" />
+          </UiFormField>
+          <UiFormField id="symbol" label="Symbol" :error="visibleError('symbol')" v-slot="{ attrs }">
+            <input v-bind="attrs" v-model="form.symbol" autocomplete="off" @blur="onBlur('symbol')" />
+          </UiFormField>
+        </div>
+
+        <UiFormField id="description" label="Description" :error="visibleError('description')">
+          <template #label-suffix>&nbsp;<span class="hint">(optional)</span></template>
+          <template #default="{ attrs }">
+            <textarea v-bind="attrs" v-model="form.description" @blur="onBlur('description')" />
+          </template>
+        </UiFormField>
+
+        <UiFormField id="decimals" label="Decimals" :error="visibleError('decimals')">
+          <template #label-suffix>&nbsp;<span class="permanent">(permanent)</span></template>
+          <template #default="{ attrs }">
+            <input v-bind="attrs" v-model="form.decimals" inputmode="numeric" @blur="onBlur('decimals')" />
+          </template>
+        </UiFormField>
+
+        <IconPicker
+          v-model="form.iconUrl"
+          :network="network"
+          :connected="connected"
+          :error="visibleError('iconUrl')"
+          @blur="onBlur('iconUrl')"
+        />
+      </fieldset>
+    </template>
+
+    <!-- Step 3: Settings -->
+    <template v-if="formStep === 'settings'">
+      <fieldset>
+        <legend>Supply &amp; policies</legend>
 
         <UiFormField id="supply" label="Initial supply" :error="visibleError('initialSupply')">
           <template #label-suffix>
@@ -184,10 +191,13 @@ function onBlur(key: string): void {
 
         <LicensePicker v-model="form.license" @name="form.licenseName = $event" />
       </fieldset>
-    </details>
+    </template>
 
     <div class="row" style="margin-top: 1rem">
-      <button type="submit" class="primary" :disabled="!canProceed">Review &amp; deploy</button>
+      <button v-if="formStep !== 'identity'" type="button" @click="emit('back')">Back</button>
+      <button type="submit" class="primary" :disabled="!canProceed">
+        {{ formStep === 'settings' ? 'Review &amp; deploy' : 'Next' }}
+      </button>
     </div>
   </form>
 </template>
