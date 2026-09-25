@@ -1,0 +1,68 @@
+name: Publish (npm)
+
+# Publishes the app's library entry (@meddleware/token-deployer-ui) to npmjs on a v* tag, so it can be
+# embedded by the dashboard. npm is a SECONDARY output here (the app also ships a
+# container image via docker-publish.yml), so publication is opt-in via the
+# repository variable NPM_PUBLISH and gated on a self-contained `verify` job.
+# Authentication uses npm OIDC trusted publishing — no long-lived NPM_TOKEN.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify (type-check + test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '24'
+      - name: Install dependencies
+        run: npm ci
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+      - name: Type-check
+        run: npm run type-check --if-present
+      - name: Unit tests
+        run: npm run test --if-present
+
+  publish-npm:
+    name: npmjs (@meddleware/token-deployer-ui)
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # required for OIDC trusted publishing
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+      # Trusted publishing (OIDC) requires npm >= 11.5.1; Node 24 ships an older npm.
+      - name: Upgrade npm for trusted publishing
+        run: npm install -g npm@latest
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build --if-present
+      - name: Publish to npmjs (OIDC, idempotent, opt-in)
+        env:
+          NPM_PUBLISH: ${{ vars.NPM_PUBLISH }}
+        run: |
+          if [ "${NPM_PUBLISH}" != "true" ]; then
+            echo "::warning::npm publishing not configured — set repository variable NPM_PUBLISH=true and configure an npmjs trusted publisher to enable it. Skipping npm publication."
+            exit 0
+          fi
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "@meddleware/token-deployer-ui@${VERSION}" version >/dev/null 2>&1; then
+            echo "::notice::v${VERSION} already published to npmjs — skipping."
+          else
+            npm publish
+          fi
