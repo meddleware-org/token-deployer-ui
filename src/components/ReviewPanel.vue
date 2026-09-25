@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { TokenConfig, Network } from '../lib/types.js'
 import { FEE_MIST } from '../config.js'
-import AppNotice from './AppNotice.vue'
+import { UiNotice } from '@meddleware/ui'
 
 const props = defineProps<{ config: TokenConfig; network: Network }>()
 defineEmits<{ (e: 'back'): void; (e: 'confirm'): void }>()
@@ -13,7 +13,7 @@ const feeSui = Number(FEE_MIST) / 1e9
   <section class="card" aria-labelledby="review-h">
     <h2 id="review-h">Review — deploying to {{ props.network }}</h2>
 
-    <AppNotice>
+    <UiNotice>
       These values are <strong>permanent</strong> once published: symbol
       <span class="mono">{{ config.symbol }}</span
       >, name <span class="mono">{{ config.name }}</span
@@ -21,7 +21,7 @@ const feeSui = Number(FEE_MIST) / 1e9
       >, and the coin type
       <span class="mono">&lt;package&gt;::{{ config.moduleName }}::{{ config.structName }}</span
       >.
-    </AppNotice>
+    </UiNotice>
 
     <dl class="grid2" v-once>
       <div>

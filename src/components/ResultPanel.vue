@@ -5,7 +5,7 @@ import { explorerObjectUrl } from '../config.js'
 import { generatePackageZip } from '../lib/generatePackage.js'
 import { fetchLicenseText } from '../lib/licenses.js'
 import GithubPush from './GithubPush.vue'
-import AppNotice from './AppNotice.vue'
+import { UiNotice } from '@meddleware/ui'
 
 const props = defineProps<{ result: PublishResult; config: TokenConfig }>()
 defineEmits<{ (e: 'restart'): void }>()
@@ -70,7 +70,7 @@ async function downloadPackage(): Promise<void> {
       </button>
       <button type="button" @click="$emit('restart')">Deploy another</button>
     </div>
-    <AppNotice v-if="downloadError" type="error">{{ downloadError }}</AppNotice>
+    <UiNotice v-if="downloadError" type="error">{{ downloadError }}</UiNotice>
 
     <div style="margin-top: 1rem">
       <GithubPush :config="config" :result="result" />

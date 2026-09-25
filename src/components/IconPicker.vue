@@ -14,8 +14,7 @@ import {
 } from '../lib/accessGate.js'
 import type { WalrusNetwork } from '../lib/walrus.js'
 import type { Network } from '../lib/types.js'
-import AppNotice from './AppNotice.vue'
-import FieldHint from './FieldHint.vue'
+import { UiNotice, UiFieldHint } from '@meddleware/ui'
 import WalrusBlobBrowser from './WalrusBlobBrowser.vue'
 import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url'
 
@@ -286,11 +285,11 @@ function onBrowseSelect(url: string): void {
       <label class="permanent-toggle">
         <input type="checkbox" v-model="permanent" />
         Permanent blob <span class="hint">(cannot be deleted)</span>
-        <FieldHint field-id="blob-permanent">
+        <UiFieldHint field-id="blob-permanent">
           A permanent blob cannot be deleted once registered, even within its storage period.
           Deletable blobs can be removed early by the owner to reclaim unused storage fees (WAL).
           Permanent is the safer default for a token icon that should remain available indefinitely.
-        </FieldHint>
+        </UiFieldHint>
       </label>
 
       <fieldset v-if="fileName && availableRelays.length > 1" style="margin: 0.5rem 0">
@@ -312,13 +311,13 @@ function onBrowseSelect(url: string): void {
         </div>
       </fieldset>
 
-      <AppNotice v-if="fileName && estimatedCost" style="margin: 0.5rem 0">
+      <UiNotice v-if="fileName && estimatedCost" style="margin: 0.5rem 0">
         <strong>Estimated cost:</strong> {{ estimatedCost.label }}
-      </AppNotice>
+      </UiNotice>
 
       <!-- NFT-gated relay: the operator relay is live but this wallet lacks the access NFT.
            The public relay is still available; purchasing unlocks the operator relay. -->
-      <AppNotice v-if="fileName && purchaseAccessAvailable" style="margin: 0.5rem 0">
+      <UiNotice v-if="fileName && purchaseAccessAvailable" style="margin: 0.5rem 0">
         <p style="margin: 0 0 0.5rem">
           The operator relay requires an access NFT. You can keep using the public relay, or
           purchase access to support this app’s relay.
@@ -326,7 +325,7 @@ function onBrowseSelect(url: string): void {
         <button type="button" :disabled="purchasing || !connected" @click="purchaseAccess">
           {{ purchasing ? 'Purchasing…' : 'Purchase relay access' }}
         </button>
-      </AppNotice>
+      </UiNotice>
 
       <p v-if="showFreeRelayTip" class="hint" style="margin: 0.5rem 0">
         Tip: select the public relay above to avoid the relay fee.
@@ -337,7 +336,7 @@ function onBrowseSelect(url: string): void {
         <strong>SUI</strong> (gas + relay fee) in your wallet; two approvals. Stored for
         ~{{ ICON_YEARS }} years. <span v-if="status">{{ status }}</span>
       </p>
-      <AppNotice v-if="uploadError" type="error">{{ uploadError }}</AppNotice>
+      <UiNotice v-if="uploadError" type="error">{{ uploadError }}</UiNotice>
     </div>
 
     <!-- Browse panel -->

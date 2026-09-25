@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { PublishResult, TokenConfig } from '../lib/types.js'
-import AppNotice from './AppNotice.vue'
+import { UiNotice } from '@meddleware/ui'
 import { buildPackageFiles } from '../lib/generatePackage.js'
 import { fetchLicenseText } from '../lib/licenses.js'
 import { createRepoAndPush } from '../lib/github.js'
@@ -91,10 +91,10 @@ async function push(): Promise<void> {
         <span v-if="progress" class="hint" aria-live="polite">{{ progress }}</span>
       </div>
 
-      <AppNotice v-if="error" type="error">{{ error }}</AppNotice>
-      <AppNotice v-if="doneUrl" type="ok">
+      <UiNotice v-if="error" type="error">{{ error }}</UiNotice>
+      <UiNotice v-if="doneUrl" type="ok">
         Pushed: <a :href="doneUrl" target="_blank" rel="noopener noreferrer">{{ doneUrl }}</a>
-      </AppNotice>
+      </UiNotice>
     </div>
   </div>
 </template>

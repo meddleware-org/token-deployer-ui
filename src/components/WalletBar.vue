@@ -3,8 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useWallet, useNetwork } from '@meddleware/wallet-adapter'
 import { SELECTABLE_NETWORKS } from '../config.js'
 import type { Network } from '../lib/types.js'
-import FormSelect from './FormSelect.vue'
-import AppNotice from './AppNotice.vue'
+import { UiSelect, UiNotice } from '@meddleware/ui'
 
 const { wallets, currentWallet, account, connecting, error, connect, disconnect } = useWallet()
 const { network, setNetwork } = useNetwork()
@@ -42,9 +41,9 @@ watch(() => account.value, (acc) => {
       <div class="row" style="justify-content: space-between">
         <div class="row">
           <label for="network-select" style="margin: 0">Network</label>
-          <FormSelect id="network-select" v-model="networkModel">
+          <UiSelect id="network-select" v-model="networkModel">
             <option v-for="n in SELECTABLE_NETWORKS" :key="n" :value="n">{{ n }}</option>
-          </FormSelect>
+          </UiSelect>
         </div>
 
         <div class="row">
@@ -68,7 +67,7 @@ watch(() => account.value, (acc) => {
       </div>
     </template>
 
-    <AppNotice v-if="error" type="error" style="margin-top: 0.75rem">{{ error }}</AppNotice>
+    <UiNotice v-if="error" type="error" style="margin-top: 0.75rem">{{ error }}</UiNotice>
   </div>
 
   <dialog ref="dialogEl" aria-labelledby="wallet-dialog-title" @click.self="closeDialog">
@@ -86,9 +85,9 @@ watch(() => account.value, (acc) => {
 
     <div>
       <label for="dialog-network-select">Network</label>
-      <FormSelect id="dialog-network-select" v-model="networkModel">
+      <UiSelect id="dialog-network-select" v-model="networkModel">
         <option v-for="n in SELECTABLE_NETWORKS" :key="n" :value="n">{{ n }}</option>
-      </FormSelect>
+      </UiSelect>
     </div>
 
     <div class="wallet-list">

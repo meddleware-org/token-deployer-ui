@@ -7,7 +7,7 @@ import { ICON_EPOCHS } from '../lib/walrus-constants.js'
 import { ICON_MAX_BYTES, validateIconFile } from '../config.js'
 import type { WalrusNetwork } from '../lib/walrus.js'
 import type { Network } from '../lib/types.js'
-import AppNotice from './AppNotice.vue'
+import { UiNotice } from '@meddleware/ui'
 // Vite serves the Walrus wasm as an asset URL (lightweight import — just the URL).
 import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url'
 
@@ -185,9 +185,9 @@ async function upload(): Promise<void> {
     </fieldset>
 
     <!-- Cost estimation (shown after file selection) -->
-    <AppNotice v-if="fileName && estimatedCost" style="margin: 0.75rem 0">
+    <UiNotice v-if="fileName && estimatedCost" style="margin: 0.75rem 0">
       <strong>Estimated cost:</strong> {{ estimatedCost.label }}
-    </AppNotice>
+    </UiNotice>
 
     <!-- Public relay notice -->
     <p v-if="showFreeRelayTip" class="hint" style="margin: 0.75rem 0">
@@ -200,6 +200,6 @@ async function upload(): Promise<void> {
       stored for ~{{ ICON_YEARS }} years.
       <span v-if="status">{{ status }}</span>
     </p>
-    <AppNotice v-if="error" type="error">{{ error }}</AppNotice>
+    <UiNotice v-if="error" type="error">{{ error }}</UiNotice>
   </div>
 </template>

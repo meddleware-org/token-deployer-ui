@@ -4,7 +4,7 @@ import { useWallet } from '@meddleware/wallet-adapter'
 import { getReadClient } from '../lib/readClient.js'
 import type { OwnedBlob, WalrusNetwork } from '../lib/walrus.js'
 import type { Network } from '../lib/types.js'
-import AppNotice from './AppNotice.vue'
+import { UiNotice } from '@meddleware/ui'
 
 const props = defineProps<{ network: WalrusNetwork; connected: boolean }>()
 const emit = defineEmits<{ (e: 'select', url: string): void }>()
@@ -84,7 +84,7 @@ function selectBlob(item: BlobItem): void {
     </div>
     <p class="hint">Browse Walrus blobs owned by this address. Only image blobs show a preview.</p>
 
-    <AppNotice v-if="loadError" type="error">{{ loadError }}</AppNotice>
+    <UiNotice v-if="loadError" type="error">{{ loadError }}</UiNotice>
 
     <p v-if="hasLoaded && blobs.length === 0 && !loading" class="hint">
       No Walrus blobs found at this address.

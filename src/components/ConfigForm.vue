@@ -6,9 +6,10 @@ import { deriveStructName } from '../lib/validation.js'
 import type { Network } from '../lib/types.js'
 import LicensePicker from './LicensePicker.vue'
 import IconPicker from './IconPicker.vue'
-import FormField from './FormField.vue'
-import FormSelect from './FormSelect.vue'
-import FieldHint from './FieldHint.vue'
+import { UiFormField, UiSelect, UiFieldHint } from '@meddleware/ui'
+
+
+
 
 const props = defineProps<{
   form: FormModel
@@ -45,12 +46,12 @@ function onBlur(key: string): void {
     <fieldset>
       <legend>Package identity <span class="permanent">(permanent)</span></legend>
       <div class="grid2">
-        <FormField id="package" label="Package name" :error="visibleError('packageName')" v-slot="{ attrs }">
+        <UiFormField id="package" label="Package name" :error="visibleError('packageName')" v-slot="{ attrs }">
           <input v-bind="attrs" v-model="form.packageName" placeholder="my_token" autocomplete="off" @blur="onBlur('packageName')" />
-        </FormField>
-        <FormField id="module" label="Module name" :error="visibleError('moduleName')" v-slot="{ attrs }">
+        </UiFormField>
+        <UiFormField id="module" label="Module name" :error="visibleError('moduleName')" v-slot="{ attrs }">
           <input v-bind="attrs" v-model="form.moduleName" placeholder="mytoken" autocomplete="off" @blur="onBlur('moduleName')" />
-        </FormField>
+        </UiFormField>
       </div>
       <p class="hint" aria-live="polite">
         <template v-if="identifierError">
@@ -68,27 +69,27 @@ function onBlur(key: string): void {
       <legend>Token details</legend>
 
       <div class="grid2">
-        <FormField id="name" label="Token name" :error="visibleError('name')" v-slot="{ attrs }">
+        <UiFormField id="name" label="Token name" :error="visibleError('name')" v-slot="{ attrs }">
           <input v-bind="attrs" v-model="form.name" autocomplete="off" @blur="onBlur('name')" />
-        </FormField>
-        <FormField id="symbol" label="Symbol" :error="visibleError('symbol')" v-slot="{ attrs }">
+        </UiFormField>
+        <UiFormField id="symbol" label="Symbol" :error="visibleError('symbol')" v-slot="{ attrs }">
           <input v-bind="attrs" v-model="form.symbol" autocomplete="off" @blur="onBlur('symbol')" />
-        </FormField>
+        </UiFormField>
       </div>
 
-      <FormField id="description" label="Description" :error="visibleError('description')">
+      <UiFormField id="description" label="Description" :error="visibleError('description')">
         <template #label-suffix>&nbsp;<span class="hint">(optional)</span></template>
         <template #default="{ attrs }">
           <textarea v-bind="attrs" v-model="form.description" @blur="onBlur('description')" />
         </template>
-      </FormField>
+      </UiFormField>
 
-      <FormField id="decimals" label="Decimals" :error="visibleError('decimals')">
+      <UiFormField id="decimals" label="Decimals" :error="visibleError('decimals')">
         <template #label-suffix>&nbsp;<span class="permanent">(permanent)</span></template>
         <template #default="{ attrs }">
           <input v-bind="attrs" v-model="form.decimals" inputmode="numeric" @blur="onBlur('decimals')" />
         </template>
-      </FormField>
+      </UiFormField>
 
       <IconPicker
         v-model="form.iconUrl"
@@ -104,82 +105,82 @@ function onBlur(key: string): void {
       <fieldset>
         <legend class="visually-hidden">Advanced options</legend>
 
-        <FormField id="supply" label="Initial supply" :error="visibleError('initialSupply')">
+        <UiFormField id="supply" label="Initial supply" :error="visibleError('initialSupply')">
           <template #label-suffix>
-            <FieldHint field-id="supply">
+            <UiFieldHint field-id="supply">
               The number of whole tokens to mint and send to the recipient at deployment.
               Uses your chosen decimal precision — with 9 decimals, 1 token = 1,000,000,000 base units on-chain.
               Enter <b>0</b> or leave blank for no initial supply.
               You can mint more later if you choose the Mintable supply policy.
-            </FieldHint>
+            </UiFieldHint>
           </template>
           <template #default="{ attrs }">
             <input v-bind="attrs" v-model="form.initialSupply" inputmode="numeric" placeholder="0" @blur="onBlur('initialSupply')" />
           </template>
-        </FormField>
+        </UiFormField>
 
         <div class="grid2">
-          <FormField id="supply-policy" label="Supply">
+          <UiFormField id="supply-policy" label="Supply">
             <template #label-suffix>
-              <FieldHint field-id="supply-policy">
+              <UiFieldHint field-id="supply-policy">
                 <b>Mintable</b>: you keep the TreasuryCap and can mint more tokens at any time.<br />
                 <b>Fixed</b>: the TreasuryCap is frozen — the total supply is sealed at deployment.
-              </FieldHint>
+              </UiFieldHint>
             </template>
             <template #default="{ attrs }">
-              <FormSelect v-bind="attrs" v-model="form.supplyPolicy">
+              <UiSelect v-bind="attrs" v-model="form.supplyPolicy">
                 <option value="mintable">Mintable</option>
                 <option value="fixed">Fixed</option>
-              </FormSelect>
+              </UiSelect>
             </template>
-          </FormField>
-          <FormField id="metadata-policy" label="Metadata">
+          </UiFormField>
+          <UiFormField id="metadata-policy" label="Metadata">
             <template #label-suffix>
-              <FieldHint field-id="metadata-policy">
+              <UiFieldHint field-id="metadata-policy">
                 <b>Updatable</b>: you keep the MetadataCap and can later change the name, symbol,
                 description, or icon.<br />
                 <b>Frozen</b>: the MetadataCap is discarded — all metadata is permanently locked.
-              </FieldHint>
+              </UiFieldHint>
             </template>
             <template #default="{ attrs }">
-              <FormSelect v-bind="attrs" v-model="form.metadataPolicy">
+              <UiSelect v-bind="attrs" v-model="form.metadataPolicy">
                 <option value="updatable">Updatable</option>
                 <option value="frozen">Frozen</option>
-              </FormSelect>
+              </UiSelect>
             </template>
-          </FormField>
+          </UiFormField>
         </div>
 
-        <FormField id="package-policy" label="Package code">
+        <UiFormField id="package-policy" label="Package code">
           <template #label-suffix>
-            <FieldHint field-id="package-policy">
+            <UiFieldHint field-id="package-policy">
               <b>Immutable</b>: the UpgradeCap is burned — the on-chain code is sealed.
               Recommended for trust and auditability.<br />
               <b>Upgradeable</b>: you keep the UpgradeCap and can push code changes to the package
               after deployment.
-            </FieldHint>
+            </UiFieldHint>
           </template>
           <template #default="{ attrs }">
-            <FormSelect v-bind="attrs" v-model="form.packagePolicy">
+            <UiSelect v-bind="attrs" v-model="form.packagePolicy">
               <option value="immutable">Immutable</option>
               <option value="upgradeable">Upgradeable</option>
-            </FormSelect>
+            </UiSelect>
           </template>
-        </FormField>
+        </UiFormField>
 
-        <FormField id="recipient" label="Recipient" :error="visibleError('recipient')">
+        <UiFormField id="recipient" label="Recipient" :error="visibleError('recipient')">
           <template #label-suffix>
-            <FieldHint field-id="recipient">
+            <UiFieldHint field-id="recipient">
               The Sui address that receives the TreasuryCap, MetadataCap, UpgradeCap (if kept),
               and any initial supply minted at deployment.
               Leave blank to send everything to the connected wallet.
               Enter a different address to separate the deployer wallet from the custody wallet.
-            </FieldHint>
+            </UiFieldHint>
           </template>
           <template #default="{ attrs }">
             <input v-bind="attrs" v-model="form.recipient" placeholder="0x…" autocomplete="off" @blur="onBlur('recipient')" />
           </template>
-        </FormField>
+        </UiFormField>
 
         <LicensePicker v-model="form.license" @name="form.licenseName = $event" />
       </fieldset>

@@ -1,8 +1,12 @@
+import '@meddleware/design-tokens/tokens.css'
+import '@meddleware/design-tokens/seasons.css'
+import '@meddleware/ui/base.css'
 import { createApp } from 'vue'
 import App from './App.vue'
 import './styles.css'
+import './component-styles.css'
 import { configureWasm } from './lib/template.js'
-import { useColorMode } from './composables/useColorMode.js'
+import { useColorMode } from '@meddleware/ui'
 
 // Apply the colour mode before mount so there is no theme flash. Defaults to
 // `system` (follows the OS) while enabling the in-app light/dark/system control.

@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import WalletBar from './components/WalletBar.vue'
 import TokenDeployerView from './components/TokenDeployerView.vue'
-import ColorModeControl from './components/ColorModeControl.vue'
-import { useColorMode } from './composables/useColorMode.js'
+import { ColorModeControl, useColorMode } from '@meddleware/ui'
 
 const { mode: colorMode, set: setColorMode } = useColorMode('system')
 </script>

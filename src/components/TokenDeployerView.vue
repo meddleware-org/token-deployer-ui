@@ -6,7 +6,7 @@ import ReviewPanel from './ReviewPanel.vue'
 import DeployProgress from './DeployProgress.vue'
 import ResultPanel from './ResultPanel.vue'
 import TermsDialog from './TermsDialog.vue'
-import AppNotice from './AppNotice.vue'
+import { UiNotice } from '@meddleware/ui'
 import { emptyForm, toTokenConfig } from '../lib/form.js'
 import { validateForm, isValid } from '../lib/validation.js'
 import { deployToken } from '../lib/deploy.js'
@@ -109,7 +109,7 @@ function restart(): void {
       :config="config"
       @restart="restart"
     />
-    <AppNotice v-if="deployError" type="error">{{ deployError }}</AppNotice>
+    <UiNotice v-if="deployError" type="error">{{ deployError }}</UiNotice>
     <TermsDialog :open="showTerms" @accept="onTermsAccept" @cancel="onTermsCancel" />
   </WalletGuard>
 </template>

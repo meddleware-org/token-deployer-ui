@@ -2,9 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { fetchLicenseList, fetchLicenseText, NO_LICENSE } from '../lib/licenses.js'
 import type { SpdxLicense } from '../lib/licenses.js'
-import FormSelect from './FormSelect.vue'
-import FieldHint from './FieldHint.vue'
-import AppNotice from './AppNotice.vue'
+import { UiSelect, UiFieldHint, UiNotice } from '@meddleware/ui'
 
 const props = defineProps<{ modelValue: string }>()
 const emit = defineEmits<{
@@ -73,14 +71,14 @@ async function openLicenseModal(): Promise<void> {
   <div>
     <label for="license-select">
       License
-      <FieldHint field-id="license-select">
+      <UiFieldHint field-id="license-select">
         Applies only to the downloadable Move source package — embedded in the LICENSE file and
         source headers. Has <b>no effect on the on-chain token</b> or its transferability.
         Choose <b>CC0-1.0</b> (default) for public domain. Choose <b>None</b> to retain all rights.
-      </FieldHint>
+      </UiFieldHint>
     </label>
     <div class="license-row">
-      <FormSelect
+      <UiSelect
         id="license-select"
         v-model="selectModel"
         :disabled="loading || Boolean(error)"
@@ -103,7 +101,7 @@ async function openLicenseModal(): Promise<void> {
             :title="`${l.id} — ${l.name}`"
           >{{ l.id }}</option>
         </optgroup>
-      </FormSelect>
+      </UiSelect>
       <button type="button" class="view-btn" :disabled="loading" @click="openLicenseModal">
         View
       </button>
@@ -127,7 +125,7 @@ async function openLicenseModal(): Promise<void> {
     <div v-if="licenseLoading" style="padding: 1rem 0">
       <span class="spinner" aria-hidden="true"></span> Loading…
     </div>
-    <AppNotice v-else-if="licenseError" type="error">{{ licenseError }}</AppNotice>
+    <UiNotice v-else-if="licenseError" type="error">{{ licenseError }}</UiNotice>
     <template v-else-if="modelValue === NO_LICENSE.id">
       <p>No LICENSE file will be generated. All rights are reserved by the author.</p>
     </template>
@@ -154,7 +152,7 @@ async function openLicenseModal(): Promise<void> {
   align-items: center;
 }
 
-.license-row :deep(.select-wrapper) {
+.license-row :deep(.mw-select) {
   flex: 1;
 }
 
