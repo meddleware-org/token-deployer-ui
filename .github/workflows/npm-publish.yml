@@ -50,8 +50,9 @@ jobs:
         run: npm install -g npm@latest
       - name: Install dependencies
         run: npm ci
-      - name: Build
-        run: npm run build --if-present
+      # No build step: the npm package ships TypeScript source (exports → ./src),
+      # not the compiled SPA. The treasury-gated `vite build` belongs to
+      # docker-publish.yml, which injects the real treasury via build-args.
       - name: Publish to npmjs (OIDC, idempotent, opt-in)
         env:
           NPM_PUBLISH: ${{ vars.NPM_PUBLISH }}
