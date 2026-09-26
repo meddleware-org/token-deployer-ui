@@ -49,11 +49,27 @@ function onBlur(key: string): void {
       <fieldset>
         <legend>Package identity <span class="permanent">(permanent)</span></legend>
         <div class="grid2">
-          <UiFormField id="package" label="Package name" :error="visibleError('packageName')" v-slot="{ attrs }">
-            <input v-bind="attrs" v-model="form.packageName" placeholder="my_token" autocomplete="off" @blur="onBlur('packageName')" />
+          <UiFormField id="package" label="Package name" :error="visibleError('packageName')">
+            <template #label-suffix>
+              <UiFieldHint field-id="package-name">
+                The on-chain Move package name (snake_case, e.g. <b>my_token</b>). It identifies the
+                published package and cannot be changed after deployment.
+              </UiFieldHint>
+            </template>
+            <template #default="{ attrs }">
+              <input v-bind="attrs" v-model="form.packageName" placeholder="my_token" autocomplete="off" @blur="onBlur('packageName')" />
+            </template>
           </UiFormField>
-          <UiFormField id="module" label="Module name" :error="visibleError('moduleName')" v-slot="{ attrs }">
-            <input v-bind="attrs" v-model="form.moduleName" placeholder="mytoken" autocomplete="off" @blur="onBlur('moduleName')" />
+          <UiFormField id="module" label="Module name" :error="visibleError('moduleName')">
+            <template #label-suffix>
+              <UiFieldHint field-id="module-name">
+                The Move module inside the package (lowercase, e.g. <b>mytoken</b>). The coin type and
+                its one-time-witness struct are derived from this name, so it is permanent too.
+              </UiFieldHint>
+            </template>
+            <template #default="{ attrs }">
+              <input v-bind="attrs" v-model="form.moduleName" placeholder="mytoken" autocomplete="off" @blur="onBlur('moduleName')" />
+            </template>
           </UiFormField>
         </div>
         <p class="hint" aria-live="polite">
@@ -75,23 +91,50 @@ function onBlur(key: string): void {
         <legend>Token details</legend>
 
         <div class="grid2">
-          <UiFormField id="name" label="Token name" :error="visibleError('name')" v-slot="{ attrs }">
-            <input v-bind="attrs" v-model="form.name" autocomplete="off" @blur="onBlur('name')" />
+          <UiFormField id="name" label="Token name" :error="visibleError('name')">
+            <template #label-suffix>
+              <UiFieldHint field-id="token-name">
+                The human-readable display name shown in wallets and explorers (e.g. <b>My Token</b>).
+                Editable later if you keep the Updatable metadata policy.
+              </UiFieldHint>
+            </template>
+            <template #default="{ attrs }">
+              <input v-bind="attrs" v-model="form.name" autocomplete="off" @blur="onBlur('name')" />
+            </template>
           </UiFormField>
-          <UiFormField id="symbol" label="Symbol" :error="visibleError('symbol')" v-slot="{ attrs }">
-            <input v-bind="attrs" v-model="form.symbol" autocomplete="off" @blur="onBlur('symbol')" />
+          <UiFormField id="symbol" label="Symbol" :error="visibleError('symbol')">
+            <template #label-suffix>
+              <UiFieldHint field-id="token-symbol">
+                The short ticker shown in wallets (e.g. <b>MYT</b>), typically 3–5 uppercase letters.
+              </UiFieldHint>
+            </template>
+            <template #default="{ attrs }">
+              <input v-bind="attrs" v-model="form.symbol" autocomplete="off" @blur="onBlur('symbol')" />
+            </template>
           </UiFormField>
         </div>
 
         <UiFormField id="description" label="Description" :error="visibleError('description')">
-          <template #label-suffix>&nbsp;<span class="hint">(optional)</span></template>
+          <template #label-suffix>
+            &nbsp;<span class="hint">(optional)</span>
+            <UiFieldHint field-id="token-description">
+              A short blurb stored in the coin metadata and shown in some wallets/explorers.
+              Leave blank if you don't need one.
+            </UiFieldHint>
+          </template>
           <template #default="{ attrs }">
             <textarea v-bind="attrs" v-model="form.description" @blur="onBlur('description')" />
           </template>
         </UiFormField>
 
         <UiFormField id="decimals" label="Decimals" :error="visibleError('decimals')">
-          <template #label-suffix>&nbsp;<span class="permanent">(permanent)</span></template>
+          <template #label-suffix>
+            &nbsp;<span class="permanent">(permanent)</span>
+            <UiFieldHint field-id="token-decimals">
+              How many decimal places the coin supports. <b>9</b> is the Sui convention (1 token =
+              1,000,000,000 base units). Fixed at deployment and cannot be changed.
+            </UiFieldHint>
+          </template>
           <template #default="{ attrs }">
             <input v-bind="attrs" v-model="form.decimals" inputmode="numeric" @blur="onBlur('decimals')" />
           </template>

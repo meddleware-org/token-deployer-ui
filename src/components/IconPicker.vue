@@ -283,7 +283,15 @@ function onBrowseSelect(url: string): void {
       </label>
 
       <fieldset v-if="fileName && availableRelays.length > 1" style="margin: 0.5rem 0">
-        <legend>Upload relay</legend>
+        <legend>
+          Upload relay
+          <UiFieldHint field-id="upload-relay">
+            Browsers can't write to Walrus directly, so the blob is sent through an upload relay.
+            The <b>public</b> relay is free; the <b>operator</b> relay is run by this app and may
+            charge a small SUI tip per upload. Both store the identical blob — pick whichever you
+            prefer.
+          </UiFieldHint>
+        </legend>
         <div style="display: flex; flex-direction: column; gap: 0.5rem">
           <label
             v-for="option in availableRelays"
@@ -321,7 +329,7 @@ function onBrowseSelect(url: string): void {
         Tip: select the public relay above to avoid the relay fee.
       </p>
 
-      <p id="walrus-help" class="hint" aria-live="polite">
+      <p id="walrus-help" class="upload-note" aria-live="polite">
         Max {{ maxSizeLabel }} · PNG/JPEG/WebP/SVG. Requires <strong>WAL</strong> (storage) and
         <strong>SUI</strong> (gas + relay fee) in your wallet; two approvals. Stored for
         ~{{ ICON_YEARS }} years. <span v-if="status">{{ status }}</span>
@@ -345,12 +353,31 @@ function onBrowseSelect(url: string): void {
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  /* Only span the content — otherwise the row stretches the full field width. */
+  width: fit-content;
   margin-top: 0.5rem;
   font-size: 0.875rem;
   cursor: pointer;
 }
 
 .permanent-toggle input[type='checkbox'] {
+  /* Override the global `input { width: 100% }` so the checkbox stays its
+     natural size instead of consuming most of the row. */
+  width: auto;
+  flex: none;
   margin: 0;
+}
+
+/* Boxed, muted note that reads as section-level guidance — visually distinct
+   from the Permanent-blob toggle above it. */
+.upload-note {
+  margin: 0.75rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.45;
 }
 </style>
