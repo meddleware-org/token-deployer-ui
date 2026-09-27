@@ -70,6 +70,7 @@ watch(() => account.value, (acc) => {
     <UiNotice v-if="error" type="error" style="margin-top: 0.75rem">{{ error }}</UiNotice>
   </div>
 
+  <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions, vuejs-accessibility/click-events-have-key-events -- native <dialog> closes on Escape; @click.self only dismisses on backdrop click -->
   <dialog ref="dialogEl" aria-labelledby="wallet-dialog-title" @click.self="closeDialog">
     <div class="dialog-header">
       <h2 id="wallet-dialog-title">Connect Wallet</h2>

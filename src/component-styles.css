@@ -82,7 +82,7 @@ button:disabled {
   grid-template-columns: 1fr;
   gap: 0 1rem;
 }
-@media (min-width: 520px) {
+@media (width >= 520px) {
   .grid2 {
     grid-template-columns: 1fr 1fr;
   }
@@ -151,7 +151,7 @@ details > fieldset {
   padding: 0;
   margin: -1px;
   overflow: hidden;
-  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
 }
@@ -228,7 +228,7 @@ dialog {
   color: var(--text);
 }
 dialog::backdrop {
-  background: rgba(0, 0, 0, 0.45);
+  background: rgb(0 0 0 / 45%);
   -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
 }

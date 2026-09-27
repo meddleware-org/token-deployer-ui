@@ -27,6 +27,12 @@ jobs:
       - name: Type-check
         run: npm run type-check
 
+      - name: Lint CSS (stylelint)
+        run: npm run lint:css --if-present
+
+      - name: Lint JS (eslint + vuejs-a11y)
+        run: npm run lint:js --if-present
+
       - name: Unit tests
         run: npm test
 

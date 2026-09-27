@@ -25,13 +25,15 @@
     "e2e:localnet": "VITE_RPC_TESTNET=${VITE_RPC_TESTNET:-http://127.0.0.1:9000} VITE_FEE_TREASURY_TESTNET=${VITE_FEE_TREASURY_TESTNET:-0xfee0000000000000000000000000000000000000000000000000000000000000} vite build && start-server-and-test preview http://localhost:4173 'E2E_NETWORK=localnet node scripts/e2e-deploy.mjs'",
     "e2e:testnet": "vite build && start-server-and-test preview http://localhost:4173 'E2E_NETWORK=testnet node scripts/e2e-deploy.mjs'",
     "e2e:mainnet": "vite build && start-server-and-test preview http://localhost:4173 'E2E_NETWORK=mainnet node scripts/e2e-deploy.mjs'",
-    "lint": "oxlint . --fix",
+    "lint": "npm run lint:css && npm run lint:js",
     "format": "oxfmt src/",
     "docs": "typedoc",
     "regen:template": "bash scripts/regen-template.sh",
     "sync:template": "bash scripts/sync-template-src.sh",
     "gen:og-image": "node scripts/gen-og-image.mjs",
-    "verify:template": "node scripts/verify-bytecode.mjs && vitest run tests/templateArtifact.test.ts tests/templateParity.test.ts"
+    "verify:template": "node scripts/verify-bytecode.mjs && vitest run tests/templateArtifact.test.ts tests/templateParity.test.ts",
+    "lint:css": "stylelint \"src/**/*.{css,vue}\"",
+    "lint:js": "eslint ."
   },
   "dependencies": {
     "@meddleware/design-tokens": "^0.1.6",
@@ -51,17 +53,28 @@
     "@vitejs/plugin-vue": "^6.0.8",
     "@vitejs/plugin-vue-jsx": "^5.1.6",
     "@vitest/eslint-plugin": "^1.6.23",
+    "@vue/eslint-config-typescript": "^14.9.0",
     "@vue/test-utils": "^2.4.0",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^10.11.0",
+    "eslint-plugin-vue": "^10.11.1",
+    "eslint-plugin-vuejs-accessibility": "^2.6.0",
+    "jiti": "^2.7.0",
     "jsdom": "^29.1.1",
     "oxfmt": "^0.59.0",
     "oxlint": "~1.76.0",
     "playwright": "^1.62.0",
+    "postcss": "^8.4.49",
+    "postcss-html": "^2.0.0",
     "start-server-and-test": "^3.0.11",
+    "stylelint": "^17.15.0",
+    "stylelint-config-standard": "^40.0.0",
     "typedoc": "^0.28.20",
     "typescript": "~6.0.0",
     "vite": "^8.1.5",
     "vite-plugin-vue-devtools": "^8.1.5",
     "vitest": "^4.1.10",
+    "vue-eslint-parser": "^10.4.1",
     "vue-tsc": "~3.3.0"
   },
   "optionalDependencies": {
@@ -69,5 +82,10 @@
   },
   "engines": {
     "node": "^22.18.0 || >=24.12.0"
-  }
+  },
+  "browserslist": [
+    "> 0.5%",
+    "last 2 versions",
+    "not dead"
+  ]
 }

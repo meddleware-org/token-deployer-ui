@@ -112,6 +112,7 @@ async function openLicenseModal(): Promise<void> {
     </p>
   </div>
 
+  <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions, vuejs-accessibility/click-events-have-key-events -- native <dialog> closes on Escape; @click.self only dismisses on backdrop click -->
   <dialog ref="licenseDialogEl" class="license-dialog" @click.self="licenseDialogEl?.close()">
     <div class="dialog-header">
       <h2>{{ currentLicenseName }}</h2>

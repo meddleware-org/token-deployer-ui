@@ -2,7 +2,8 @@
 import { ref, watch } from 'vue'
 
 const props = defineProps<{ open: boolean }>()
-const emit = defineEmits<{
+// Emitted via $emit in the template; no script-side reference needed.
+defineEmits<{
   (e: 'accept'): void
   (e: 'cancel'): void
 }>()
@@ -16,6 +17,7 @@ watch(
 </script>
 
 <template>
+  <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions, vuejs-accessibility/click-events-have-key-events -- native <dialog> closes on Escape (@cancel); @click.self only dismisses on backdrop click -->
   <dialog ref="el" @click.self="$emit('cancel')" @cancel.prevent="$emit('cancel')">
     <div class="dialog-header">
       <h2>Before you deploy</h2>

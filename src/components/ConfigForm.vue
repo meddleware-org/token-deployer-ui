@@ -123,7 +123,7 @@ function onBlur(key: string): void {
             </UiFieldHint>
           </template>
           <template #default="{ attrs }">
-            <textarea v-bind="attrs" v-model="form.description" @blur="onBlur('description')" />
+            <textarea v-bind="attrs" v-model="form.description" aria-label="Description" @blur="onBlur('description')" />
           </template>
         </UiFormField>
 
