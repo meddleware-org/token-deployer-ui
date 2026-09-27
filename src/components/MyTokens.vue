@@ -1,0 +1,108 @@
+<script setup lang="ts">
+// Lists the coins the connected wallet has deployed (owned TreasuryCap<T> objects). Read-only,
+// mirroring access-gate's "My Gates". Loads on mount + whenever the connected address changes.
+import { computed, ref, watch } from 'vue'
+import { CopyableAddress, ExplorerLink, UiNotice, suiExplorerUrl, type SuiNetwork } from '@meddleware/ui'
+import { listMyTokens, type DeployedToken } from '../lib/listMyTokens.js'
+import type { Network } from '../lib/types.js'
+
+const props = defineProps<{ owner: string | null; network: Network }>()
+
+// SuiVision has no localnet explorer, so only build object links on public networks.
+const explorerNetwork = computed<SuiNetwork | null>(() =>
+  props.network === 'localnet' ? null : props.network,
+)
+function objectHref(id: string): string | null {
+  return explorerNetwork.value ? suiExplorerUrl('object', id, explorerNetwork.value) : null
+}
+
+const tokens = ref<DeployedToken[]>([])
+const loading = ref(false)
+const error = ref<string | null>(null)
+
+async function load(): Promise<void> {
+  if (!props.owner) { tokens.value = []; return }
+  loading.value = true
+  error.value = null
+  try {
+    tokens.value = await listMyTokens(props.owner, props.network)
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e)
+    tokens.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+watch(() => props.owner, load, { immediate: true })
+defineExpose({ reload: load })
+</script>
+
+<template>
+  <div class="my-tokens">
+    <p v-if="loading" class="hint">Loading your deployed tokens…</p>
+    <UiNotice v-else-if="error" type="error">{{ error }}</UiNotice>
+    <p v-else-if="!tokens.length" class="hint">
+      No deployed tokens found for this wallet. Deploy one from the <strong>Deploy</strong> tab.
+    </p>
+    <ul v-else class="my-tokens__list">
+      <li v-for="t in tokens" :key="t.treasuryCapId" class="my-tokens__item">
+        <div class="my-tokens__label">{{ t.label }}</div>
+        <dl class="my-tokens__meta">
+          <dt>Coin type</dt>
+          <dd><CopyableAddress :address="t.coinType" label="Copy coin type" /></dd>
+          <dt>Package</dt>
+          <dd>
+            <CopyableAddress :address="t.packageId" label="Copy package id">
+              <ExplorerLink v-if="objectHref(t.packageId)" :href="objectHref(t.packageId)!" :value="t.packageId" />
+            </CopyableAddress>
+          </dd>
+          <dt>Treasury cap</dt>
+          <dd>
+            <CopyableAddress :address="t.treasuryCapId" label="Copy treasury cap id">
+              <ExplorerLink v-if="objectHref(t.treasuryCapId)" :href="objectHref(t.treasuryCapId)!" :value="t.treasuryCapId" />
+            </CopyableAddress>
+          </dd>
+        </dl>
+      </li>
+    </ul>
+  </div>
+</template>
+
+<style scoped>
+.my-tokens__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.my-tokens__item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 0.9rem;
+  background: var(--surface);
+}
+.my-tokens__label {
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+.my-tokens__meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.2rem 0.75rem;
+  margin: 0;
+  font-size: 0.8rem;
+}
+.my-tokens__meta dt {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.my-tokens__meta dd {
+  margin: 0;
+  min-width: 0;
+  font-family: var(--mw-font-mono);
+  font-size: 0.72rem;
+}
+</style>

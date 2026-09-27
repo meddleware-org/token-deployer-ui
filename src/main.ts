@@ -6,11 +6,14 @@ import App from './App.vue'
 import './styles.css'
 import './component-styles.css'
 import { configureWasm } from './lib/template.js'
-import { useColorMode } from '@meddleware/ui'
+import { useColorMode, useSeason } from '@meddleware/ui'
 
 // Apply the colour mode before mount so there is no theme flash. Defaults to
 // `system` (follows the OS) while enabling the in-app light/dark/system control.
 useColorMode('system')
+
+// Enable seasonal theming (sets data-season on <html>; seasons.css is imported above).
+useSeason()
 
 // Vite serves the wasm as an asset URL; wasm-bindgen's init loads it on demand.
 import wasmUrl from '@mysten/move-bytecode-template/web/move_bytecode_template_bg.wasm?url'
