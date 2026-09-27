@@ -9,12 +9,10 @@ const { mode: colorMode, set: setColorMode } = useColorMode('system')
 <template>
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <main id="main-content">
-    <div class="theme-bar">
-      <ColorModeControl :model-value="colorMode" @update:model-value="setColorMode" />
-    </div>
-    <header v-once>
+    <header class="page-header">
+      <ColorModeControl class="theme-toggle" :model-value="colorMode" @update:model-value="setColorMode" />
       <h1>Create your own Sui coin</h1>
-      <p class="lede">
+      <p v-once class="lede">
         Deploy a coin on Sui directly from your browser. Your wallet signs and pays gas — nothing is
         compiled or signed on a server — and you keep the full, verifiable source package.
       </p>
@@ -24,7 +22,7 @@ const { mode: colorMode, set: setColorMode } = useColorMode('system')
 
     <TokenDeployerView />
 
-    <footer v-once style="margin-top: 3rem; color: var(--muted); font-size: 0.9rem">
+    <footer v-once class="page-footer">
       <p>
         Client-side token deployment. This tool never takes custody of your token or keys. Symbol,
         name, and decimals are permanent once published.

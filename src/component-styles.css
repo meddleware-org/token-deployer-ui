@@ -77,6 +77,10 @@ button:disabled {
   flex-wrap: wrap;
   align-items: center;
 }
+/* A row of form/navigation actions below a block of content. */
+.actions {
+  margin-top: 1rem;
+}
 .grid2 {
   display: grid;
   grid-template-columns: 1fr;
@@ -144,18 +148,6 @@ details > fieldset {
   background: var(--border);
 }
 
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
-}
-
 .skip-link {
   position: absolute;
   left: 0.5rem;
@@ -217,31 +209,6 @@ details > fieldset {
   }
 }
 
-dialog {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  width: min(420px, 90vw);
-  max-height: 90vh;
-  overflow-y: auto;
-  color: var(--text);
-}
-dialog::backdrop {
-  background: rgb(0 0 0 / 45%);
-  -webkit-backdrop-filter: blur(2px);
-  backdrop-filter: blur(2px);
-}
-.dialog-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.25rem;
-}
-.dialog-header h2 {
-  margin: 0;
-  font-size: 1.1rem;
-}
 .wallet-list {
   display: flex;
   flex-direction: column;

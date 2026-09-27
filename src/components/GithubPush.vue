@@ -56,7 +56,7 @@ async function push(): Promise<void> {
       {{ open ? '▾' : '▸' }} Create a GitHub repo (optional)
     </button>
 
-    <div v-if="open" class="card" style="margin-top: 0.5rem">
+    <div v-if="open" class="card github-push__form">
       <p v-once class="hint">
         Uses your <strong>own</strong> GitHub token — the repo is created in your account and this
         site's servers are never involved. The token is sent only to
@@ -67,24 +67,23 @@ async function push(): Promise<void> {
       </p>
 
       <label for="gh-repo">Repository name</label>
-      <input id="gh-repo" v-model="repoName" autocomplete="off" />
+      <input id="gh-repo" v-model="repoName" type="text" autocomplete="off" />
 
       <label for="gh-token">GitHub token</label>
       <input
         id="gh-token"
         v-model="token"
         type="password"
-        autocomplete="off"
+        autocomplete="new-password"
         spellcheck="false"
         placeholder="github_pat_… or ghp_…"
       />
 
-      <label style="font-weight: 400; margin-top: 0.75rem">
-        <input type="checkbox" v-model="isPrivate" style="width: auto" /> Make the repository
-        private
+      <label class="github-push__private">
+        <input v-model="isPrivate" type="checkbox" /> Make the repository private
       </label>
 
-      <div class="row" style="margin-top: 0.75rem">
+      <div class="row github-push__actions">
         <button type="button" class="primary" :disabled="busy || !token || !repoName" @click="push">
           <span v-if="busy" class="spinner" aria-hidden="true"></span> Create repo &amp; push
         </button>
@@ -98,3 +97,19 @@ async function push(): Promise<void> {
     </div>
   </div>
 </template>
+
+<style scoped>
+.github-push__form {
+  margin-top: 0.5rem;
+}
+.github-push__private {
+  margin-top: 0.75rem;
+  font-weight: 400;
+}
+.github-push__private input {
+  width: auto;
+}
+.github-push__actions {
+  margin-top: 0.75rem;
+}
+</style>

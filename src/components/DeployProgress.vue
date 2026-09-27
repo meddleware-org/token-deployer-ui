@@ -38,7 +38,7 @@ const steps = computed(() =>
         <span v-if="s.state === 'active'" class="spinner" aria-hidden="true"></span>
         <span v-else-if="s.state === 'done'" aria-hidden="true">✓ </span>
         {{ s.label }}
-        <span v-if="s.state === 'active'" class="visually-hidden">(in progress)</span>
+        <span v-if="s.state === 'active'" class="mw-visually-hidden">(in progress)</span>
       </li>
     </ol>
     <p class="hint">Keep this tab open and approve the wallet prompts.</p>

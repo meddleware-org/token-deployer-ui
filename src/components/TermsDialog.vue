@@ -1,28 +1,25 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+// Pre-deploy terms, in the shared UiDialog. Closing by any route (Cancel, Escape, backdrop,
+// close button) counts as cancel; only the "continue" action accepts — UiDialog's return value
+// tells them apart.
+import { UiDialog } from '@meddleware/ui'
 
-const props = defineProps<{ open: boolean }>()
-// Emitted via $emit in the template; no script-side reference needed.
-defineEmits<{
+defineProps<{ open: boolean }>()
+const emit = defineEmits<{
   (e: 'accept'): void
   (e: 'cancel'): void
 }>()
 
-const el = ref<HTMLDialogElement>()
-
-watch(
-  () => props.open,
-  (v) => (v ? el.value?.showModal() : el.value?.close()),
-)
+function onClose(returnValue: string): void {
+  if (returnValue === 'accept') emit('accept')
+  else emit('cancel')
+}
 </script>
 
 <template>
-  <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions, vuejs-accessibility/click-events-have-key-events -- native <dialog> closes on Escape (@cancel); @click.self only dismisses on backdrop click -->
-  <dialog ref="el" @click.self="$emit('cancel')" @cancel.prevent="$emit('cancel')">
-    <div class="dialog-header">
-      <h2>Before you deploy</h2>
-    </div>
-    <ul>
+  <UiDialog :open="open" title="Before you deploy" @close="onClose">
+    <!-- A list: each item is a discrete, parallel term (announced with an item count). -->
+    <ul class="terms">
       <li>
         All operations — bytecode compilation, transaction construction, and signing — take place
         entirely <strong>client-side</strong>, meaning on your computer. No code runs on our
@@ -50,34 +47,34 @@ watch(
         arising from your use of this tool.
       </li>
     </ul>
-    <p style="margin-bottom: 1.25rem; font-size: 0.9rem; color: var(--muted)">
+    <p class="terms__confirm">
       By continuing, you confirm that you have read and accept these terms.
     </p>
-    <div class="terms-actions">
-      <button type="button" class="primary" @click="$emit('accept')">I understand — continue</button>
-      <button type="button" @click="$emit('cancel')">Cancel</button>
-    </div>
-  </dialog>
+    <template #actions="{ close }">
+      <button type="button" class="primary" @click="close('accept')">I understand — continue</button>
+      <button type="button" @click="close('cancel')">Cancel</button>
+    </template>
+  </UiDialog>
 </template>
 
 <style scoped>
-ul {
+.terms {
   padding-left: 1.25rem;
-  margin: 0 0 1rem;
+  margin: 0;
   line-height: 1.6;
 }
 
-ul li {
+.terms li {
   margin-bottom: 0.6rem;
 }
 
-ul li:last-child {
+.terms li:last-child {
   margin-bottom: 0;
 }
 
-.terms-actions {
-  display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
+.terms__confirm {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
 }
 </style>

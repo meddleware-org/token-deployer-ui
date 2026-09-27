@@ -22,11 +22,17 @@ export default defineConfigWithVueTs(
     name: 'token-deployer-ui/overrides',
     rules: {
       // Accept both valid label-association patterns: a label wrapping its
-      // control (nesting) or a label[for] pointing at a control[id].
+      // control (nesting) or a label[for] pointing at a control[id]. UiSelect renders a native
+      // <select>, so a label nesting it is labelling a control.
       'vuejs-accessibility/label-has-for': [
         'error',
-        { required: { some: ['nesting', 'id'] } },
+        { required: { some: ['nesting', 'id'] }, controlComponents: ['UiSelect'] },
       ],
+      // UiFormField renders the <label for> for the control in its default slot.
+      'vuejs-accessibility/form-control-has-label': ['error', { labelComponents: ['UiFormField'] }],
+      // role="list" on styled lists is a deliberate Safari/VoiceOver workaround: WebKit drops
+      // list semantics when list-style is removed, so the explicit role stays.
+      'vuejs-accessibility/no-redundant-roles': 'off',
       // Underscore-prefixed args/vars are an intentional "unused" marker.
       '@typescript-eslint/no-unused-vars': [
         'error',

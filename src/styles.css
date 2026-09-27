@@ -2,10 +2,16 @@
    Token variables come from @meddleware/design-tokens, imported before this.
    Component utility classes live in component-styles.css. */
 
-.theme-bar {
-  display: flex;
-  justify-content: flex-end;
+/* The colour-mode control is the page header's first grid item, aligned to the inline end. */
+.theme-toggle {
+  justify-self: end;
   margin-bottom: 0.75rem;
+}
+
+.page-footer {
+  margin-top: 3rem;
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 body {
@@ -26,7 +32,9 @@ main {
   padding: 1.5rem 1.25rem 4rem;
 }
 
-header {
+/* A single-column grid so the colour-mode control can sit at the inline end without a wrapper. */
+.page-header {
+  display: grid;
   padding-bottom: 1.5rem;
   border-bottom: 1px solid var(--border);
   margin-bottom: 1.5rem;

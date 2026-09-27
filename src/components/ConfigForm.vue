@@ -57,7 +57,7 @@ function onBlur(key: string): void {
               </UiFieldHint>
             </template>
             <template #default="{ attrs }">
-              <input v-bind="attrs" v-model="form.packageName" placeholder="my_token" autocomplete="off" @blur="onBlur('packageName')" />
+              <input type="text" v-bind="attrs" v-model="form.packageName" placeholder="my_token" autocomplete="off" @blur="onBlur('packageName')" />
             </template>
           </UiFormField>
           <UiFormField id="module" label="Module name" :error="visibleError('moduleName')">
@@ -68,7 +68,7 @@ function onBlur(key: string): void {
               </UiFieldHint>
             </template>
             <template #default="{ attrs }">
-              <input v-bind="attrs" v-model="form.moduleName" placeholder="mytoken" autocomplete="off" @blur="onBlur('moduleName')" />
+              <input type="text" v-bind="attrs" v-model="form.moduleName" placeholder="mytoken" autocomplete="off" @blur="onBlur('moduleName')" />
             </template>
           </UiFormField>
         </div>
@@ -99,7 +99,7 @@ function onBlur(key: string): void {
               </UiFieldHint>
             </template>
             <template #default="{ attrs }">
-              <input v-bind="attrs" v-model="form.name" autocomplete="off" @blur="onBlur('name')" />
+              <input type="text" v-bind="attrs" v-model="form.name" autocomplete="off" @blur="onBlur('name')" />
             </template>
           </UiFormField>
           <UiFormField id="symbol" label="Symbol" :error="visibleError('symbol')">
@@ -109,7 +109,7 @@ function onBlur(key: string): void {
               </UiFieldHint>
             </template>
             <template #default="{ attrs }">
-              <input v-bind="attrs" v-model="form.symbol" autocomplete="off" @blur="onBlur('symbol')" />
+              <input type="text" v-bind="attrs" v-model="form.symbol" autocomplete="off" @blur="onBlur('symbol')" />
             </template>
           </UiFormField>
         </div>
@@ -123,7 +123,7 @@ function onBlur(key: string): void {
             </UiFieldHint>
           </template>
           <template #default="{ attrs }">
-            <textarea v-bind="attrs" v-model="form.description" aria-label="Description" @blur="onBlur('description')" />
+            <textarea v-bind="attrs" v-model="form.description" @blur="onBlur('description')" />
           </template>
         </UiFormField>
 
@@ -136,7 +136,7 @@ function onBlur(key: string): void {
             </UiFieldHint>
           </template>
           <template #default="{ attrs }">
-            <input v-bind="attrs" v-model="form.decimals" inputmode="numeric" @blur="onBlur('decimals')" />
+            <input type="text" v-bind="attrs" v-model="form.decimals" inputmode="numeric" @blur="onBlur('decimals')" />
           </template>
         </UiFormField>
 
@@ -165,7 +165,7 @@ function onBlur(key: string): void {
             </UiFieldHint>
           </template>
           <template #default="{ attrs }">
-            <input v-bind="attrs" v-model="form.initialSupply" inputmode="numeric" placeholder="0" @blur="onBlur('initialSupply')" />
+            <input type="text" v-bind="attrs" v-model="form.initialSupply" inputmode="numeric" placeholder="0" @blur="onBlur('initialSupply')" />
           </template>
         </UiFormField>
 
@@ -228,7 +228,7 @@ function onBlur(key: string): void {
             </UiFieldHint>
           </template>
           <template #default="{ attrs }">
-            <input v-bind="attrs" v-model="form.recipient" placeholder="0x…" autocomplete="off" @blur="onBlur('recipient')" />
+            <input type="text" v-bind="attrs" v-model="form.recipient" placeholder="0x…" autocomplete="off" @blur="onBlur('recipient')" />
           </template>
         </UiFormField>
 
@@ -236,7 +236,7 @@ function onBlur(key: string): void {
       </fieldset>
     </template>
 
-    <div class="row" style="margin-top: 1rem">
+    <div class="row actions">
       <button v-if="formStep !== 'identity'" type="button" @click="emit('back')">Back</button>
       <button type="submit" class="primary" :disabled="!canProceed">
         {{ formStep === 'settings' ? 'Review &amp; deploy' : 'Next' }}

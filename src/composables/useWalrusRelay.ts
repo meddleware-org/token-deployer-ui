@@ -1,7 +1,7 @@
 // Thin wrapper around the shared `@meddleware/walrus-relay-ui` composable: injects
 // this app's per-network relay host pair so the relay-selection + tip-estimation logic
 // lives in exactly one place (DRY). The return shape is unchanged, so consumers
-// (`WalrusIconUpload.vue`, `IconPicker.vue`) and tests are unaffected.
+// (`IconPicker.vue`) and tests are unaffected.
 import { useWalrusRelay as useSharedWalrusRelay } from '@meddleware/walrus-relay'
 import type { RelayAccessOptions, RelayOption } from '@meddleware/walrus-relay'
 import { WALRUS_RELAY_HOSTS, PUBLIC_WALRUS_RELAY_HOSTS } from '../config.js'

@@ -7,7 +7,7 @@ import DeployProgress from './DeployProgress.vue'
 import ResultPanel from './ResultPanel.vue'
 import TermsDialog from './TermsDialog.vue'
 import MyTokens from './MyTokens.vue'
-import { UiNotice, UiStepper, UiToolIntro, AppTabNav, type StepperStep, type AppTab } from '@meddleware/ui'
+import { AppTabNav, UiNotice, UiStepper, UiTabPanel, UiToolIntro, type AppTab, type StepperStep } from '@meddleware/ui'
 import { emptyForm, toTokenConfig } from '../lib/form.js'
 import { validateForm } from '../lib/validation.js'
 import type { FormErrors } from '../lib/validation.js'
@@ -160,41 +160,49 @@ function restart(): void {
 <template>
     <UiToolIntro>Deploy your own Sui coin — your wallet signs and pays; no intermediaries ({{ network }}).</UiToolIntro>
 
-    <AppTabNav :tabs="TABS" v-model="activeTab" aria-label="Sections" style="margin: 0 0 1rem" />
+    <AppTabNav v-model="activeTab" :tabs="TABS" id-prefix="token-deployer" aria-label="Sections" class="deployer-tabs" />
 
     <WalletGuard message="Connect a Sui wallet to deploy your token.">
-      <template v-if="activeTab === 'deploy'">
-        <UiStepper :steps="STEPS" :model-value="stepIndex" @update:model-value="onStepperBack" />
-        <ConfigForm
-          v-if="step === 'identity' || step === 'token' || step === 'settings'"
-          :form="form"
-          :errors="errors"
-          :can-proceed="canProceed"
-          :network="network"
-          :connected="connected"
-          :form-step="formStep"
-          @next="goNext"
-          @back="goBack"
-        />
-        <ReviewPanel
-          v-if="step === 'review'"
-          :config="config"
-          :network="network"
-          @back="goBack"
-          @confirm="confirmDeploy"
-        />
-        <DeployProgress v-if="step === 'deploying'" :step="deployStep" />
-        <ResultPanel
-          v-if="step === 'done' && result"
-          :result="result"
-          :config="config"
-          @restart="restart"
-        />
-        <UiNotice v-if="deployError" type="error">{{ deployError }}</UiNotice>
-      </template>
+      <UiTabPanel id-prefix="token-deployer" :tab="activeTab">
+        <template v-if="activeTab === 'deploy'">
+          <UiStepper :steps="STEPS" :model-value="stepIndex" @update:model-value="onStepperBack" />
+          <ConfigForm
+            v-if="step === 'identity' || step === 'token' || step === 'settings'"
+            :form="form"
+            :errors="errors"
+            :can-proceed="canProceed"
+            :network="network"
+            :connected="connected"
+            :form-step="formStep"
+            @next="goNext"
+            @back="goBack"
+          />
+          <ReviewPanel
+            v-if="step === 'review'"
+            :config="config"
+            :network="network"
+            @back="goBack"
+            @confirm="confirmDeploy"
+          />
+          <DeployProgress v-if="step === 'deploying'" :step="deployStep" />
+          <ResultPanel
+            v-if="step === 'done' && result"
+            :result="result"
+            :config="config"
+            @restart="restart"
+          />
+          <UiNotice v-if="deployError" type="error">{{ deployError }}</UiNotice>
+        </template>
 
-      <MyTokens v-else :owner="account?.address ?? null" :network="network" />
+        <MyTokens v-else :owner="account?.address ?? null" :network="network" />
+      </UiTabPanel>
     </WalletGuard>
 
     <TermsDialog :open="showTerms" @accept="onTermsAccept" @cancel="onTermsCancel" />
 </template>
+
+<style scoped>
+.deployer-tabs {
+  margin: 0 0 1rem;
+}
+</style>

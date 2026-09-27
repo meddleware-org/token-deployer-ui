@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { fetchLicenseList, fetchLicenseText, NO_LICENSE } from '../lib/licenses.js'
 import type { SpdxLicense } from '../lib/licenses.js'
-import { UiSelect, UiFieldHint, UiNotice } from '@meddleware/ui'
+import { UiDialog, UiFieldHint, UiFormField, UiNotice, UiSelect } from '@meddleware/ui'
 
 const props = defineProps<{ modelValue: string }>()
 const emit = defineEmits<{
@@ -46,7 +46,7 @@ onMounted(async () => {
 })
 
 // License view modal
-const licenseDialogEl = ref<HTMLDialogElement>()
+const licenseOpen = ref(false)
 const licenseText = ref<string | null>(null)
 const licenseLoading = ref(false)
 const licenseError = ref<string | null>(null)
@@ -63,75 +63,64 @@ async function openLicenseModal(): Promise<void> {
       licenseLoading.value = false
     }
   }
-  licenseDialogEl.value?.showModal()
+  licenseOpen.value = true
 }
 </script>
 
 <template>
-  <div>
-    <label for="license-select">
-      License
+  <UiFormField id="license-select" label="License">
+    <template #label-suffix>
       <UiFieldHint field-id="license-select">
         Applies only to the downloadable Move source package — embedded in the LICENSE file and
         source headers. Has <b>no effect on the on-chain token</b> or its transferability.
         Choose <b>CC0-1.0</b> (default) for public domain. Choose <b>None</b> to retain all rights.
       </UiFieldHint>
-    </label>
-    <div class="license-row">
-      <UiSelect
-        id="license-select"
-        v-model="selectModel"
-        :disabled="loading || Boolean(error)"
-        aria-describedby="license-load-status"
-      >
-        <option :value="NO_LICENSE.id" :title="NO_LICENSE.name">{{ NO_LICENSE.id }}</option>
-        <optgroup v-if="popular.length" label="Popular">
-          <option
-            v-for="l in popular"
-            :key="'p-' + l.id"
-            :value="l.id"
-            :title="`${l.id} — ${l.name}`"
-          >{{ l.id }}</option>
-        </optgroup>
-        <optgroup v-if="all.length" label="All licenses">
-          <option
-            v-for="l in allExceptNone"
-            :key="l.id"
-            :value="l.id"
-            :title="`${l.id} — ${l.name}`"
-          >{{ l.id }}</option>
-        </optgroup>
-      </UiSelect>
-      <button type="button" class="view-btn" :disabled="loading" @click="openLicenseModal">
-        View
-      </button>
-    </div>
-    <p id="license-load-status" class="hint" aria-live="polite">
-      <span v-if="loading"><span class="spinner" aria-hidden="true"></span> Loading licenses from SPDX…</span>
-      <span v-else-if="error" class="field-error">Couldn't load the license list: {{ error }}</span>
-    </p>
-  </div>
-
-  <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions, vuejs-accessibility/click-events-have-key-events -- native <dialog> closes on Escape; @click.self only dismisses on backdrop click -->
-  <dialog ref="licenseDialogEl" class="license-dialog" @click.self="licenseDialogEl?.close()">
-    <div class="dialog-header">
-      <h2>{{ currentLicenseName }}</h2>
-      <button
-        type="button"
-        aria-label="Close"
-        style="background: none; border: none; font-size: 1.5rem; padding: 0; cursor: pointer; color: var(--text)"
-        @click="licenseDialogEl?.close()"
-      >×</button>
-    </div>
-    <div v-if="licenseLoading" style="padding: 1rem 0">
-      <span class="spinner" aria-hidden="true"></span> Loading…
-    </div>
-    <UiNotice v-else-if="licenseError" type="error">{{ licenseError }}</UiNotice>
-    <template v-else-if="modelValue === NO_LICENSE.id">
-      <p>No LICENSE file will be generated. All rights are reserved by the author.</p>
     </template>
+    <template #default="{ attrs }">
+      <span class="license-row">
+        <UiSelect
+          v-bind="attrs"
+          v-model="selectModel"
+          :disabled="loading || Boolean(error)"
+          aria-describedby="license-load-status"
+        >
+          <option :value="NO_LICENSE.id" :title="NO_LICENSE.name">{{ NO_LICENSE.id }}</option>
+          <optgroup v-if="popular.length" label="Popular">
+            <option
+              v-for="l in popular"
+              :key="'p-' + l.id"
+              :value="l.id"
+              :title="`${l.id} — ${l.name}`"
+            >{{ l.id }}</option>
+          </optgroup>
+          <optgroup v-if="all.length" label="All licenses">
+            <option
+              v-for="l in allExceptNone"
+              :key="l.id"
+              :value="l.id"
+              :title="`${l.id} — ${l.name}`"
+            >{{ l.id }}</option>
+          </optgroup>
+        </UiSelect>
+        <button type="button" class="view-btn" :disabled="loading" @click="openLicenseModal">
+          View
+        </button>
+      </span>
+    </template>
+  </UiFormField>
+  <p id="license-load-status" class="hint" aria-live="polite">
+    <span v-if="loading"><span class="spinner" aria-hidden="true"></span> Loading licenses from SPDX…</span>
+    <span v-else-if="error" class="field-error">Couldn't load the license list: {{ error }}</span>
+  </p>
+
+  <UiDialog v-model:open="licenseOpen" :title="currentLicenseName" width="min(680px, 92vw)">
+    <p v-if="licenseLoading" role="status"><span class="spinner" aria-hidden="true"></span> Loading…</p>
+    <UiNotice v-else-if="licenseError" type="error">{{ licenseError }}</UiNotice>
+    <p v-else-if="modelValue === NO_LICENSE.id">
+      No LICENSE file will be generated. All rights are reserved by the author.
+    </p>
     <template v-else>
-      <p style="margin-top: 0">
+      <p class="license-spdx">
         <a
           :href="`https://spdx.org/licenses/${modelValue}.html`"
           target="_blank"
@@ -140,10 +129,10 @@ async function openLicenseModal(): Promise<void> {
       </p>
       <pre class="license-text">{{ licenseText }}</pre>
     </template>
-    <div style="margin-top: 1rem; text-align: right">
-      <button type="button" @click="licenseDialogEl?.close()">Close</button>
-    </div>
-  </dialog>
+    <template #actions="{ close }">
+      <button type="button" @click="close()">Close</button>
+    </template>
+  </UiDialog>
 </template>
 
 <style scoped>
@@ -162,8 +151,8 @@ async function openLicenseModal(): Promise<void> {
   white-space: nowrap;
 }
 
-.license-dialog {
-  width: min(680px, 92vw);
+.license-spdx {
+  margin: 0;
 }
 
 .license-text {

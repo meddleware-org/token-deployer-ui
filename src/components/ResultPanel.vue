@@ -72,11 +72,9 @@ async function downloadPackage(): Promise<void> {
     </div>
     <UiNotice v-if="downloadError" type="error">{{ downloadError }}</UiNotice>
 
-    <div style="margin-top: 1rem">
-      <GithubPush :config="config" :result="result" />
-    </div>
+    <GithubPush class="actions" :config="config" :result="result" />
 
-    <p v-once class="hint" style="margin-top: 1rem">
+    <p v-once class="hint actions">
       The download is the full, buildable Move package (matching this on-chain deployment) — your
       TreasuryCap grants minting rights; keep it safe. This tool takes no custody of your token.
     </p>

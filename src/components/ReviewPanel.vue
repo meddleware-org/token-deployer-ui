@@ -61,7 +61,7 @@ const feeSui = Number(FEE_MIST) / 1e9
       token or caps.
     </p>
 
-    <div class="row" style="margin-top: 1rem">
+    <div class="row actions">
       <button type="button" @click="$emit('back')">Back</button>
       <button type="button" class="primary" @click="$emit('confirm')">Confirm &amp; deploy</button>
     </div>

@@ -75,7 +75,7 @@ function selectBlob(item: BlobItem): void {
         type="text"
         placeholder="0x… or leave blank for your wallet"
         aria-label="Wallet address to browse"
-        style="flex: 1"
+        class="blob-browser__address"
       />
       <button type="button" :disabled="loading || (!connected && !addressInput.trim())" @click="load">
         <span v-if="loading" class="spinner" aria-hidden="true"></span>
@@ -90,15 +90,14 @@ function selectBlob(item: BlobItem): void {
       No Walrus blobs found at this address.
     </p>
 
-    <div v-if="blobs.length > 0" class="blob-grid" role="listbox" aria-label="Walrus blobs">
+    <!-- A list of toggle buttons (native keyboard behaviour); aria-pressed marks the chosen blob. -->
+    <ul v-if="blobs.length > 0" role="list" class="blob-grid" aria-label="Walrus blobs">
+      <li v-for="b in blobs" :key="b.objectId">
       <button
-        v-for="b in blobs"
-        :key="b.objectId"
         type="button"
         class="blob-thumb"
         :class="{ selected: selected === b.blobId }"
-        role="option"
-        :aria-selected="selected === b.blobId"
+        :aria-pressed="selected === b.blobId"
         @click="selectBlob(b)"
       >
         <img
@@ -109,7 +108,8 @@ function selectBlob(item: BlobItem): void {
         />
         <span class="blob-meta">{{ formatSize(b.size) }}</span>
       </button>
-    </div>
+      </li>
+    </ul>
   </div>
 </template>
 
@@ -127,7 +127,12 @@ function selectBlob(item: BlobItem): void {
   margin-top: 0.25rem;
 }
 
+.blob-browser__address {
+  flex: 1;
+}
+
 .blob-thumb {
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;

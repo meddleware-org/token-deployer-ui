@@ -236,7 +236,7 @@ function onBrowseSelect(url: string): void {
         { id: 'browse', label: 'My Walrus blobs', disabled: !isWalrusNetwork, title: isWalrusNetwork ? undefined : 'Not available on localnet' },
       ]"
       aria-label="Icon source"
-      style="margin-bottom: 0.75rem"
+      class="icon-source"
     />
 
     <!-- URL panel -->
@@ -263,7 +263,7 @@ function onBrowseSelect(url: string): void {
           accept="image/*"
           aria-label="Choose an image to upload to Walrus"
           aria-describedby="walrus-help"
-          style="width: auto"
+          class="icon-file"
           @change="onFile"
         />
         <button type="button" :disabled="uploading || !connected || !fileName" @click="upload">
@@ -272,17 +272,20 @@ function onBrowseSelect(url: string): void {
         </button>
       </div>
 
-      <label class="permanent-toggle">
-        <input type="checkbox" v-model="permanent" />
-        Permanent blob <span class="hint">(cannot be deleted)</span>
+      <!-- The help button sits beside the label, not inside it (a label may only contain its control). -->
+      <p class="permanent-toggle">
+        <label>
+          <input v-model="permanent" type="checkbox" />
+          Permanent blob <span class="hint">(cannot be deleted)</span>
+        </label>
         <UiFieldHint field-id="blob-permanent">
           A permanent blob cannot be deleted once registered, even within its storage period.
           Deletable blobs can be removed early by the owner to reclaim unused storage fees (WAL).
           Permanent is the safer default for a token icon that should remain available indefinitely.
         </UiFieldHint>
-      </label>
+      </p>
 
-      <fieldset v-if="fileName && availableRelays.length > 1" style="margin: 0.5rem 0">
+      <fieldset v-if="fileName && availableRelays.length > 1" class="relay-choice">
         <legend>
           Upload relay
           <UiFieldHint field-id="upload-relay">
@@ -292,40 +295,33 @@ function onBrowseSelect(url: string): void {
             prefer.
           </UiFieldHint>
         </legend>
-        <div style="display: flex; flex-direction: column; gap: 0.5rem">
-          <label
-            v-for="option in availableRelays"
-            :key="option.host"
-            style="display: flex; align-items: center; gap: 0.5rem"
-          >
-            <input
-              type="radio"
-              :value="option.host"
-              :checked="selectedRelayHost === option.host"
-              @change="(e) => onRelayChange((e.target as HTMLInputElement).value)"
-            />
-            <span>{{ option.label }}</span>
-          </label>
-        </div>
+        <label v-for="option in availableRelays" :key="option.host">
+          <input
+            type="radio"
+            name="upload-relay"
+            :value="option.host"
+            :checked="selectedRelayHost === option.host"
+            @change="(e) => onRelayChange((e.target as HTMLInputElement).value)"
+          />
+          <span>{{ option.label }}</span>
+        </label>
       </fieldset>
 
-      <UiNotice v-if="fileName && estimatedCost" style="margin: 0.5rem 0">
+      <UiNotice v-if="fileName && estimatedCost" class="icon-notice">
         <strong>Estimated cost:</strong> {{ estimatedCost.label }}
       </UiNotice>
 
       <!-- NFT-gated relay: the operator relay is live but this wallet lacks the access NFT.
            The public relay is still available; purchasing unlocks the operator relay. -->
-      <UiNotice v-if="fileName && purchaseAccessAvailable" style="margin: 0.5rem 0">
-        <p style="margin: 0 0 0.5rem">
-          The operator relay requires an access NFT. You can keep using the public relay, or
-          purchase access to support this app’s relay.
-        </p>
-        <button type="button" :disabled="purchasing || !connected" @click="purchaseAccess">
+      <UiNotice v-if="fileName && purchaseAccessAvailable" class="icon-notice">
+        The operator relay requires an access NFT. You can keep using the public relay, or
+        purchase access to support this app’s relay.
+        <button type="button" class="icon-notice__cta" :disabled="purchasing || !connected" @click="purchaseAccess">
           {{ purchasing ? 'Purchasing…' : 'Purchase relay access' }}
         </button>
       </UiNotice>
 
-      <p v-if="showFreeRelayTip" class="hint" style="margin: 0.5rem 0">
+      <p v-if="showFreeRelayTip" class="hint icon-notice">
         Tip: select the public relay above to avoid the relay fee.
       </p>
 
@@ -345,6 +341,37 @@ function onBrowseSelect(url: string): void {
 </template>
 
 <style scoped>
+.icon-source {
+  margin-bottom: 0.75rem;
+}
+
+.icon-file {
+  width: auto;
+}
+
+.relay-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.relay-choice label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.icon-notice {
+  margin: 0.5rem 0;
+}
+
+.icon-notice__cta {
+  display: block;
+  margin-top: 0.5rem;
+}
+
 .icon-panel {
   padding-top: 0.5rem;
 }
@@ -355,8 +382,15 @@ function onBrowseSelect(url: string): void {
   gap: 0.4rem;
   /* Only span the content — otherwise the row stretches the full field width. */
   width: fit-content;
-  margin-top: 0.5rem;
+  margin: 0.5rem 0 0;
   font-size: 0.875rem;
+}
+
+.permanent-toggle label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
   cursor: pointer;
 }
 
