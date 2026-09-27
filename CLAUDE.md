@@ -49,7 +49,7 @@ wallet-adapter `buildExecutor`.
 - **Orchestration** — [src/lib/deploy.ts](src/lib/deploy.ts) sequences patch →
   publish → wait → (finalize) via an injectable `Executor` (so it is unit-testable;
   the real one is built from the wallet in
-  [src/composables/useWallet.ts](src/composables/useWallet.ts)).
+  [src/lib/deployExecutor.ts](src/lib/deployExecutor.ts)).
 - **Package generation** — [src/lib/generatePackage.ts](src/lib/generatePackage.ts)
   substitutes the same inputs into the canonical template text
   ([src/template-src/files.json](src/template-src/files.json)) and zips it.

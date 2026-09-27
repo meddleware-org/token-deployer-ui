@@ -6,6 +6,9 @@ import App from './App.vue'
 import './styles.css'
 import './component-styles.css'
 import { configureWasm } from './lib/template.js'
+// Static: readClient is already in the main chunk (IconPicker, WalrusBlobBrowser and listMyTokens
+// import it), so a dynamic import in the E2E block below could not split it out anyway.
+import { getReadClient } from './lib/readClient.js'
 import { useColorMode, useSeason } from '@meddleware/ui'
 
 // Apply the colour mode before mount so there is no theme flash. Defaults to
@@ -28,7 +31,6 @@ configureWasm(wasmUrl)
 ;(async () => {
   if (import.meta.env.VITE_E2E === '1') {
     const { getWallets } = await import('@mysten/wallet-standard')
-    const { getReadClient: getSuiClient } = await import('./lib/readClient.js')
 
     // Mock fetch globally for RPC requests so Cypress intercepts are bypassed entirely
     const originalFetch = globalThis.fetch
@@ -154,7 +156,7 @@ configureWasm(wasmUrl)
     }
 
     // Expose getSuiClient for tests to build transactions
-    w.__getSuiClient = getSuiClient
+    w.__getSuiClient = getReadClient
   }
 
   createApp(App).mount('#app')
