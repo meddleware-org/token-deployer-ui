@@ -116,11 +116,16 @@ function onFile(e: Event): void {
   const f = (e.target as HTMLInputElement).files?.[0]
   if (!f) return
   const invalid = validateIconFile(f)
-  if (invalid) { uploadError.value = invalid; return }
+  if (invalid) {
+    uploadError.value = invalid
+    return
+  }
   fileName.value = f.name
   fileSizeBytes.value = f.size
   const reader = new FileReader()
-  reader.onload = () => { bytes = new Uint8Array(reader.result as ArrayBuffer) }
+  reader.onload = () => {
+    bytes = new Uint8Array(reader.result as ArrayBuffer)
+  }
   reader.readAsArrayBuffer(f)
 }
 
@@ -129,14 +134,19 @@ function onRelayChange(newHost: string): void {
 }
 
 async function upload(): Promise<void> {
-  if (!bytes) { uploadError.value = 'Choose an image first.'; return }
-  if (!account.value) { uploadError.value = 'Connect your wallet first.'; return }
+  if (!bytes) {
+    uploadError.value = 'Choose an image first.'
+    return
+  }
+  if (!account.value) {
+    uploadError.value = 'Connect your wallet first.'
+    return
+  }
   uploading.value = true
   uploadError.value = null
   try {
-    const { createWalrusClient, createBlobUploadFlow, walrusBlobUrl } = await import(
-      '../lib/walrus.js'
-    )
+    const { createWalrusClient, createBlobUploadFlow, walrusBlobUrl } =
+      await import('../lib/walrus.js')
     const executor = await buildDeployExecutor(props.network as Network)
     const suiClient = getReadClient(props.network as Network)
 
@@ -232,8 +242,18 @@ function onBrowseSelect(url: string): void {
       v-model="tab"
       :options="[
         { id: 'url', label: 'URL' },
-        { id: 'upload', label: 'Upload to Walrus', disabled: !isWalrusNetwork, title: isWalrusNetwork ? undefined : 'Not available on localnet' },
-        { id: 'browse', label: 'My Walrus blobs', disabled: !isWalrusNetwork, title: isWalrusNetwork ? undefined : 'Not available on localnet' },
+        {
+          id: 'upload',
+          label: 'Upload to Walrus',
+          disabled: !isWalrusNetwork,
+          title: isWalrusNetwork ? undefined : 'Not available on localnet',
+        },
+        {
+          id: 'browse',
+          label: 'My Walrus blobs',
+          disabled: !isWalrusNetwork,
+          title: isWalrusNetwork ? undefined : 'Not available on localnet',
+        },
       ]"
       aria-label="Icon source"
       class="icon-source"
@@ -314,9 +334,14 @@ function onBrowseSelect(url: string): void {
       <!-- NFT-gated relay: the operator relay is live but this wallet lacks the access NFT.
            The public relay is still available; purchasing unlocks the operator relay. -->
       <UiNotice v-if="fileName && purchaseAccessAvailable" class="icon-notice">
-        The operator relay requires an access NFT. You can keep using the public relay, or
-        purchase access to support this app’s relay.
-        <button type="button" class="icon-notice__cta" :disabled="purchasing || !connected" @click="purchaseAccess">
+        The operator relay requires an access NFT. You can keep using the public relay, or purchase
+        access to support this app’s relay.
+        <button
+          type="button"
+          class="icon-notice__cta"
+          :disabled="purchasing || !connected"
+          @click="purchaseAccess"
+        >
           {{ purchasing ? 'Purchasing…' : 'Purchase relay access' }}
         </button>
       </UiNotice>
@@ -327,8 +352,10 @@ function onBrowseSelect(url: string): void {
 
       <p id="walrus-help" class="upload-note" aria-live="polite">
         Max {{ maxSizeLabel }} · PNG/JPEG/WebP/SVG. Requires <strong>WAL</strong> (storage) and
-        <strong>SUI</strong> (gas + relay fee) in your wallet; two approvals. Stored for
-        ~{{ ICON_YEARS }} years. <span v-if="status">{{ status }}</span>
+        <strong>SUI</strong> (gas + relay fee) in your wallet; two approvals. Stored for ~{{
+          ICON_YEARS
+        }}
+        years. <span v-if="status">{{ status }}</span>
       </p>
       <UiNotice v-if="uploadError" type="error">{{ uploadError }}</UiNotice>
     </div>

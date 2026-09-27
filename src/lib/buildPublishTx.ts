@@ -103,7 +103,7 @@ export function buildFinalizeTransaction(args: BuildFinalizeArgs): Transaction {
       target: `${SUI_FRAMEWORK}::coin_registry::finalize_registration`,
       typeArguments: [coinType],
       arguments: [
-        tx.object('0xc'),               // &mut CoinRegistry (shared object at well-known address)
+        tx.object('0xc'), // &mut CoinRegistry (shared object at well-known address)
         tx.receivingRef(args.currencyRef), // Receiving<Currency<T>> — pending object at @0xc
       ],
     })

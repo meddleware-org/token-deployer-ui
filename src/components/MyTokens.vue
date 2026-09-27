@@ -2,7 +2,13 @@
 // Lists the coins the connected wallet has deployed (owned TreasuryCap<T> objects). Read-only,
 // mirroring access-gate's "My Gates". Loads on mount + whenever the connected address changes.
 import { computed, ref, watch } from 'vue'
-import { CopyableAddress, ExplorerLink, UiNotice, suiExplorerUrl, type SuiNetwork } from '@meddleware/ui'
+import {
+  CopyableAddress,
+  ExplorerLink,
+  UiNotice,
+  suiExplorerUrl,
+  type SuiNetwork,
+} from '@meddleware/ui'
 import { listMyTokens, type DeployedToken } from '../lib/listMyTokens.js'
 import type { Network } from '../lib/types.js'
 
@@ -21,7 +27,10 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 
 async function load(): Promise<void> {
-  if (!props.owner) { tokens.value = []; return }
+  if (!props.owner) {
+    tokens.value = []
+    return
+  }
   loading.value = true
   error.value = null
   try {
@@ -54,13 +63,21 @@ defineExpose({ reload: load })
           <dt>Package</dt>
           <dd>
             <CopyableAddress :address="t.packageId" label="Copy package id">
-              <ExplorerLink v-if="objectHref(t.packageId)" :href="objectHref(t.packageId)!" :value="t.packageId" />
+              <ExplorerLink
+                v-if="objectHref(t.packageId)"
+                :href="objectHref(t.packageId)!"
+                :value="t.packageId"
+              />
             </CopyableAddress>
           </dd>
           <dt>Treasury cap</dt>
           <dd>
             <CopyableAddress :address="t.treasuryCapId" label="Copy treasury cap id">
-              <ExplorerLink v-if="objectHref(t.treasuryCapId)" :href="objectHref(t.treasuryCapId)!" :value="t.treasuryCapId" />
+              <ExplorerLink
+                v-if="objectHref(t.treasuryCapId)"
+                :href="objectHref(t.treasuryCapId)!"
+                :value="t.treasuryCapId"
+              />
             </CopyableAddress>
           </dd>
         </dl>

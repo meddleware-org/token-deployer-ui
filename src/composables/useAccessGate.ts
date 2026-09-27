@@ -53,7 +53,12 @@ export function useAccessGate(
     checking.value = true
     error.value = null
     try {
-      const nfts = await fetchAccessNfts(deps.getClient(network), address, gate.nftType, gate.gateId)
+      const nfts = await fetchAccessNfts(
+        deps.getClient(network),
+        address,
+        gate.nftType,
+        gate.gateId,
+      )
       hasAccess.value = nfts.length > 0
       usesRemaining.value = nfts.length ? nfts[0].usesRemaining : null
       nftId.value = nfts.length ? nfts[0].objectId : null

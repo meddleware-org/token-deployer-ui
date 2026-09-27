@@ -25,9 +25,7 @@ function getState(i: number): 'done' | 'active' | 'todo' {
   return 'todo'
 }
 
-const steps = computed(() =>
-  ORDER.map((s, i) => ({ ...s, state: getState(i) }))
-)
+const steps = computed(() => ORDER.map((s, i) => ({ ...s, state: getState(i) })))
 </script>
 
 <template>

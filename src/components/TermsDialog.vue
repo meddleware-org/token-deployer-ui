@@ -51,7 +51,9 @@ function onClose(returnValue: string): void {
       By continuing, you confirm that you have read and accept these terms.
     </p>
     <template #actions="{ close }">
-      <button type="button" class="primary" @click="close('accept')">I understand — continue</button>
+      <button type="button" class="primary" @click="close('accept')">
+        I understand — continue
+      </button>
       <button type="button" @click="close('cancel')">Cancel</button>
     </template>
   </UiDialog>

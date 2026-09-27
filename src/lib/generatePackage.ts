@@ -11,7 +11,12 @@
 import { zipSync, strToU8 } from 'fflate'
 import templateFiles from '../template-src/files.json'
 import type { PublishResult, TokenConfig } from './types.js'
-import { SAFE_TEXT, deriveStructName, validateIdentifier, hasAllowedIconScheme } from './validation.js'
+import {
+  SAFE_TEXT,
+  deriveStructName,
+  validateIdentifier,
+  hasAllowedIconScheme,
+} from './validation.js'
 
 const files = templateFiles as Record<string, string>
 

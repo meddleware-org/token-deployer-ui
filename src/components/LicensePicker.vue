@@ -72,8 +72,8 @@ async function openLicenseModal(): Promise<void> {
     <template #label-suffix>
       <UiFieldHint field-id="license-select">
         Applies only to the downloadable Move source package — embedded in the LICENSE file and
-        source headers. Has <b>no effect on the on-chain token</b> or its transferability.
-        Choose <b>CC0-1.0</b> (default) for public domain. Choose <b>None</b> to retain all rights.
+        source headers. Has <b>no effect on the on-chain token</b> or its transferability. Choose
+        <b>CC0-1.0</b> (default) for public domain. Choose <b>None</b> to retain all rights.
       </UiFieldHint>
     </template>
     <template #default="{ attrs }">
@@ -91,7 +91,9 @@ async function openLicenseModal(): Promise<void> {
               :key="'p-' + l.id"
               :value="l.id"
               :title="`${l.id} — ${l.name}`"
-            >{{ l.id }}</option>
+            >
+              {{ l.id }}
+            </option>
           </optgroup>
           <optgroup v-if="all.length" label="All licenses">
             <option
@@ -99,7 +101,9 @@ async function openLicenseModal(): Promise<void> {
               :key="l.id"
               :value="l.id"
               :title="`${l.id} — ${l.name}`"
-            >{{ l.id }}</option>
+            >
+              {{ l.id }}
+            </option>
           </optgroup>
         </UiSelect>
         <button type="button" class="view-btn" :disabled="loading" @click="openLicenseModal">
@@ -109,12 +113,16 @@ async function openLicenseModal(): Promise<void> {
     </template>
   </UiFormField>
   <p id="license-load-status" class="hint" aria-live="polite">
-    <span v-if="loading"><span class="spinner" aria-hidden="true"></span> Loading licenses from SPDX…</span>
+    <span v-if="loading"
+      ><span class="spinner" aria-hidden="true"></span> Loading licenses from SPDX…</span
+    >
     <span v-else-if="error" class="field-error">Couldn't load the license list: {{ error }}</span>
   </p>
 
   <UiDialog v-model:open="licenseOpen" :title="currentLicenseName" width="min(680px, 92vw)">
-    <p v-if="licenseLoading" role="status"><span class="spinner" aria-hidden="true"></span> Loading…</p>
+    <p v-if="licenseLoading" role="status">
+      <span class="spinner" aria-hidden="true"></span> Loading…
+    </p>
     <UiNotice v-else-if="licenseError" type="error">{{ licenseError }}</UiNotice>
     <p v-else-if="modelValue === NO_LICENSE.id">
       No LICENSE file will be generated. All rights are reserved by the author.
@@ -125,7 +133,8 @@ async function openLicenseModal(): Promise<void> {
           :href="`https://spdx.org/licenses/${modelValue}.html`"
           target="_blank"
           rel="noopener noreferrer"
-        >View on SPDX ↗</a>
+          >View on SPDX ↗</a
+        >
       </p>
       <pre class="license-text">{{ licenseText }}</pre>
     </template>

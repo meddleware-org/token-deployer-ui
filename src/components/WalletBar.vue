@@ -21,9 +21,12 @@ const networkModel = computed({
 })
 
 // Close the connect dialog once a wallet connects.
-watch(() => account.value, (acc) => {
-  if (acc) dialogOpen.value = false
-})
+watch(
+  () => account.value,
+  (acc) => {
+    if (acc) dialogOpen.value = false
+  },
+)
 </script>
 
 <template>

@@ -46,9 +46,8 @@ async function load(): Promise<void> {
   blobs.value = []
   hasLoaded.value = false
   try {
-    const { createWalrusClient, walrusBlobUrl, fetchOwnedWalrusBlobs } = await import(
-      '../lib/walrus.js'
-    )
+    const { createWalrusClient, walrusBlobUrl, fetchOwnedWalrusBlobs } =
+      await import('../lib/walrus.js')
     const suiClient = getReadClient(props.network as Network)
     const client = createWalrusClient(props.network)
     const raw = await fetchOwnedWalrusBlobs(suiClient, client, addr)
@@ -77,7 +76,11 @@ function selectBlob(item: BlobItem): void {
         aria-label="Wallet address to browse"
         class="blob-browser__address"
       />
-      <button type="button" :disabled="loading || (!connected && !addressInput.trim())" @click="load">
+      <button
+        type="button"
+        :disabled="loading || (!connected && !addressInput.trim())"
+        @click="load"
+      >
         <span v-if="loading" class="spinner" aria-hidden="true"></span>
         Load
       </button>
@@ -93,21 +96,21 @@ function selectBlob(item: BlobItem): void {
     <!-- A list of toggle buttons (native keyboard behaviour); aria-pressed marks the chosen blob. -->
     <ul v-if="blobs.length > 0" role="list" class="blob-grid" aria-label="Walrus blobs">
       <li v-for="b in blobs" :key="b.objectId">
-      <button
-        type="button"
-        class="blob-thumb"
-        :class="{ selected: selected === b.blobId }"
-        :aria-pressed="selected === b.blobId"
-        @click="selectBlob(b)"
-      >
-        <img
-          :src="b.url"
-          :alt="`Blob ${b.blobId.slice(0, 8)}…`"
-          loading="lazy"
-          @error="(e) => (e.target as HTMLElement).parentElement?.classList.add('no-img')"
-        />
-        <span class="blob-meta">{{ formatSize(b.size) }}</span>
-      </button>
+        <button
+          type="button"
+          class="blob-thumb"
+          :class="{ selected: selected === b.blobId }"
+          :aria-pressed="selected === b.blobId"
+          @click="selectBlob(b)"
+        >
+          <img
+            :src="b.url"
+            :alt="`Blob ${b.blobId.slice(0, 8)}…`"
+            loading="lazy"
+            @error="(e) => (e.target as HTMLElement).parentElement?.classList.add('no-img')"
+          />
+          <span class="blob-meta">{{ formatSize(b.size) }}</span>
+        </button>
       </li>
     </ul>
   </div>

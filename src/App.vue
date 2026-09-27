@@ -10,7 +10,11 @@ const { mode: colorMode, set: setColorMode } = useColorMode('system')
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <main id="main-content">
     <header class="page-header">
-      <ColorModeControl class="theme-toggle" :model-value="colorMode" @update:model-value="setColorMode" />
+      <ColorModeControl
+        class="theme-toggle"
+        :model-value="colorMode"
+        @update:model-value="setColorMode"
+      />
       <h1>Create your own Sui coin</h1>
       <p v-once class="lede">
         Deploy a coin on Sui directly from your browser. Your wallet signs and pays gas — nothing is

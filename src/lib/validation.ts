@@ -123,18 +123,22 @@ export function validateForm(form: ValidatableForm): FormErrors {
 
   if (!form.symbol.trim()) errors.symbol = 'Required'
   else if (form.symbol.length > 32) errors.symbol = 'Maximum 32 characters'
-  else if (!SAFE_TEXT.test(form.symbol)) errors.symbol = 'Double quotes and backslashes are not supported'
+  else if (!SAFE_TEXT.test(form.symbol))
+    errors.symbol = 'Double quotes and backslashes are not supported'
 
   if (!form.name.trim()) errors.name = 'Required'
   else if (form.name.length > 64) errors.name = 'Maximum 64 characters'
-  else if (!SAFE_TEXT.test(form.name)) errors.name = 'Double quotes and backslashes are not supported'
+  else if (!SAFE_TEXT.test(form.name))
+    errors.name = 'Double quotes and backslashes are not supported'
 
   if (form.description.length > 256) errors.description = 'Maximum 256 characters'
-  else if (!SAFE_TEXT.test(form.description)) errors.description = 'Double quotes and backslashes are not supported'
+  else if (!SAFE_TEXT.test(form.description))
+    errors.description = 'Double quotes and backslashes are not supported'
 
   if (form.iconUrl) {
     if (form.iconUrl.length > 512) errors.iconUrl = 'Maximum 512 characters'
-    else if (!SAFE_TEXT.test(form.iconUrl)) errors.iconUrl = 'Double quotes and backslashes are not supported'
+    else if (!SAFE_TEXT.test(form.iconUrl))
+      errors.iconUrl = 'Double quotes and backslashes are not supported'
     else if (!hasAllowedIconScheme(form.iconUrl)) errors.iconUrl = 'Use an https:// or ipfs:// URL'
   }
 

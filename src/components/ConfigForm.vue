@@ -43,7 +43,6 @@ function onBlur(key: string): void {
 
 <template>
   <form novalidate @submit.prevent="emit('next')">
-
     <!-- Step 1: Identity -->
     <template v-if="formStep === 'identity'">
       <fieldset>
@@ -57,18 +56,32 @@ function onBlur(key: string): void {
               </UiFieldHint>
             </template>
             <template #default="{ attrs }">
-              <input type="text" v-bind="attrs" v-model="form.packageName" placeholder="my_token" autocomplete="off" @blur="onBlur('packageName')" />
+              <input
+                type="text"
+                v-bind="attrs"
+                v-model="form.packageName"
+                placeholder="my_token"
+                autocomplete="off"
+                @blur="onBlur('packageName')"
+              />
             </template>
           </UiFormField>
           <UiFormField id="module" label="Module name" :error="visibleError('moduleName')">
             <template #label-suffix>
               <UiFieldHint field-id="module-name">
-                The Move module inside the package (lowercase, e.g. <b>mytoken</b>). The coin type and
-                its one-time-witness struct are derived from this name, so it is permanent too.
+                The Move module inside the package (lowercase, e.g. <b>mytoken</b>). The coin type
+                and its one-time-witness struct are derived from this name, so it is permanent too.
               </UiFieldHint>
             </template>
             <template #default="{ attrs }">
-              <input type="text" v-bind="attrs" v-model="form.moduleName" placeholder="mytoken" autocomplete="off" @blur="onBlur('moduleName')" />
+              <input
+                type="text"
+                v-bind="attrs"
+                v-model="form.moduleName"
+                placeholder="mytoken"
+                autocomplete="off"
+                @blur="onBlur('moduleName')"
+              />
             </template>
           </UiFormField>
         </div>
@@ -78,8 +91,8 @@ function onBlur(key: string): void {
           </template>
           <template v-else>
             Coin type will be <span class="mono">{{ coinTypePreview }}</span
-            >. The witness struct <span class="mono">{{ structPreview }}</span> is derived from
-            the module name (a Sui requirement).
+            >. The witness struct <span class="mono">{{ structPreview }}</span> is derived from the
+            module name (a Sui requirement).
           </template>
         </p>
       </fieldset>
@@ -94,22 +107,35 @@ function onBlur(key: string): void {
           <UiFormField id="name" label="Token name" :error="visibleError('name')">
             <template #label-suffix>
               <UiFieldHint field-id="token-name">
-                The human-readable display name shown in wallets and explorers (e.g. <b>My Token</b>).
-                Editable later if you keep the Updatable metadata policy.
+                The human-readable display name shown in wallets and explorers (e.g.
+                <b>My Token</b>). Editable later if you keep the Updatable metadata policy.
               </UiFieldHint>
             </template>
             <template #default="{ attrs }">
-              <input type="text" v-bind="attrs" v-model="form.name" autocomplete="off" @blur="onBlur('name')" />
+              <input
+                type="text"
+                v-bind="attrs"
+                v-model="form.name"
+                autocomplete="off"
+                @blur="onBlur('name')"
+              />
             </template>
           </UiFormField>
           <UiFormField id="symbol" label="Symbol" :error="visibleError('symbol')">
             <template #label-suffix>
               <UiFieldHint field-id="token-symbol">
-                The short ticker shown in wallets (e.g. <b>MYT</b>), typically 3–5 uppercase letters.
+                The short ticker shown in wallets (e.g. <b>MYT</b>), typically 3–5 uppercase
+                letters.
               </UiFieldHint>
             </template>
             <template #default="{ attrs }">
-              <input type="text" v-bind="attrs" v-model="form.symbol" autocomplete="off" @blur="onBlur('symbol')" />
+              <input
+                type="text"
+                v-bind="attrs"
+                v-model="form.symbol"
+                autocomplete="off"
+                @blur="onBlur('symbol')"
+              />
             </template>
           </UiFormField>
         </div>
@@ -118,8 +144,8 @@ function onBlur(key: string): void {
           <template #label-suffix>
             &nbsp;<span class="hint">(optional)</span>
             <UiFieldHint field-id="token-description">
-              A short blurb stored in the coin metadata and shown in some wallets/explorers.
-              Leave blank if you don't need one.
+              A short blurb stored in the coin metadata and shown in some wallets/explorers. Leave
+              blank if you don't need one.
             </UiFieldHint>
           </template>
           <template #default="{ attrs }">
@@ -136,7 +162,13 @@ function onBlur(key: string): void {
             </UiFieldHint>
           </template>
           <template #default="{ attrs }">
-            <input type="text" v-bind="attrs" v-model="form.decimals" inputmode="numeric" @blur="onBlur('decimals')" />
+            <input
+              type="text"
+              v-bind="attrs"
+              v-model="form.decimals"
+              inputmode="numeric"
+              @blur="onBlur('decimals')"
+            />
           </template>
         </UiFormField>
 
@@ -158,14 +190,21 @@ function onBlur(key: string): void {
         <UiFormField id="supply" label="Initial supply" :error="visibleError('initialSupply')">
           <template #label-suffix>
             <UiFieldHint field-id="supply">
-              The number of whole tokens to mint and send to the recipient at deployment.
-              Uses your chosen decimal precision — with 9 decimals, 1 token = 1,000,000,000 base units on-chain.
-              Enter <b>0</b> or leave blank for no initial supply.
-              You can mint more later if you choose the Mintable supply policy.
+              The number of whole tokens to mint and send to the recipient at deployment. Uses your
+              chosen decimal precision — with 9 decimals, 1 token = 1,000,000,000 base units
+              on-chain. Enter <b>0</b> or leave blank for no initial supply. You can mint more later
+              if you choose the Mintable supply policy.
             </UiFieldHint>
           </template>
           <template #default="{ attrs }">
-            <input type="text" v-bind="attrs" v-model="form.initialSupply" inputmode="numeric" placeholder="0" @blur="onBlur('initialSupply')" />
+            <input
+              type="text"
+              v-bind="attrs"
+              v-model="form.initialSupply"
+              inputmode="numeric"
+              placeholder="0"
+              @blur="onBlur('initialSupply')"
+            />
           </template>
         </UiFormField>
 
@@ -204,8 +243,8 @@ function onBlur(key: string): void {
         <UiFormField id="package-policy" label="Package code">
           <template #label-suffix>
             <UiFieldHint field-id="package-policy">
-              <b>Immutable</b>: the UpgradeCap is burned — the on-chain code is sealed.
-              Recommended for trust and auditability.<br />
+              <b>Immutable</b>: the UpgradeCap is burned — the on-chain code is sealed. Recommended
+              for trust and auditability.<br />
               <b>Upgradeable</b>: you keep the UpgradeCap and can push code changes to the package
               after deployment.
             </UiFieldHint>
@@ -221,14 +260,21 @@ function onBlur(key: string): void {
         <UiFormField id="recipient" label="Recipient" :error="visibleError('recipient')">
           <template #label-suffix>
             <UiFieldHint field-id="recipient">
-              The Sui address that receives the TreasuryCap, MetadataCap, UpgradeCap (if kept),
-              and any initial supply minted at deployment.
-              Leave blank to send everything to the connected wallet.
-              Enter a different address to separate the deployer wallet from the custody wallet.
+              The Sui address that receives the TreasuryCap, MetadataCap, UpgradeCap (if kept), and
+              any initial supply minted at deployment. Leave blank to send everything to the
+              connected wallet. Enter a different address to separate the deployer wallet from the
+              custody wallet.
             </UiFieldHint>
           </template>
           <template #default="{ attrs }">
-            <input type="text" v-bind="attrs" v-model="form.recipient" placeholder="0x…" autocomplete="off" @blur="onBlur('recipient')" />
+            <input
+              type="text"
+              v-bind="attrs"
+              v-model="form.recipient"
+              placeholder="0x…"
+              autocomplete="off"
+              @blur="onBlur('recipient')"
+            />
           </template>
         </UiFormField>
 
