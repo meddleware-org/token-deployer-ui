@@ -122,12 +122,12 @@ function renderMoveToml(cfg: TokenConfig): string {
 function renderSource(cfg: TokenConfig): string {
   let out = files['source.move']
 
-  // license header (lines 1-2)
+  // license header (lines 1-2) — always rewritten, whatever licence the template itself carries
   const lines = out.split('\n')
   if (isProprietary(cfg.license)) {
     lines[0] = '// SPDX-License-Identifier: UNLICENSED'
     lines[1] = '// All rights reserved. Proprietary and not licensed for redistribution.'
-  } else if (spdxId(cfg.license) !== 'CC0-1.0') {
+  } else {
     lines[0] = `// SPDX-License-Identifier: ${spdxId(cfg.license)}`
     lines[1] = `// Licensed under the ${spdxId(cfg.license)} license; see the LICENSE file.`
   }
@@ -157,18 +157,18 @@ function renderPublishScript(cfg: TokenConfig): string {
   return out
 }
 
+/** The template README's licence line, whatever licence the template itself ships with. */
+const TEMPLATE_LICENSE_LINE = /^(?:CC0 1\.0 Universal|BSD Zero Clause License).*$/m
+
 function renderReadme(cfg: TokenConfig): string {
-  let out = applyDocPlaceholders(files['README.md'], cfg)
+  const out = applyDocPlaceholders(files['README.md'], cfg)
   const licenseName = cfg.licenseName || spdxId(cfg.license)
-  if (isProprietary(cfg.license)) {
-    out = out.replace(
-      /^CC0 1\.0 Universal.*$/m,
-      'All rights reserved. This package is proprietary and not licensed for redistribution.',
-    )
-  } else if (spdxId(cfg.license) !== 'CC0-1.0') {
-    out = out.replace(/^CC0 1\.0 Universal.*$/m, `${licenseName} — see the LICENSE file.`)
-  }
-  return out
+  return out.replace(
+    TEMPLATE_LICENSE_LINE,
+    isProprietary(cfg.license)
+      ? 'All rights reserved. This package is proprietary and not licensed for redistribution.'
+      : `${licenseName} — see the LICENSE file.`,
+  )
 }
 
 /**

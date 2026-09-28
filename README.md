@@ -70,7 +70,7 @@ host dashboard. See [.env.example](.env.example) for the full list.
 | `VITE_FEE_MIST` | Flat fee split from the user's gas coin. | `1000000000` (1 SUI) |
 | `VITE_RPC_TESTNET` / `_MAINNET` | gRPC fullnode endpoint (set a paid RPC for production). JSON-RPC-only endpoints do not work. | public fullnodes |
 | `VITE_PUBLISH_GAS_BUDGET` | Publish gas budget (MIST). | `500000000` |
-| `VITE_PUBLIC_URL` | Site origin for canonical/OG/JSON-LD URLs. | `https://sui-token-deployer.meddleware.co.uk` |
+| `VITE_PUBLIC_URL` | Site origin (no trailing slash) for the canonical URL and Open Graph tags in `index.html`. | `https://sui-token-deployer.meddleware.co.uk` (`.env.production`) |
 | `VITE_WALRUS_RELAY_TESTNET` / `_MAINNET` | Your own upload relay (to collect the tip). Unset → public Mysten relay (earns nothing). | public relay |
 | `VITE_WALRUS_MAX_TIP_MIST` | Client-side max relay tip. **Must exceed your relay's tip** or uploads fail. | `50000000` (0.05 SUI) |
 | `VITE_ICON_MAX_BYTES` / `VITE_ICON_ALLOWED_TYPES` | Client icon size/type gate (UX only). | `102400` / PNG,JPEG,WebP,SVG |

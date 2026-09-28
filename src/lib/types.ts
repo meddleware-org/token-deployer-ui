@@ -41,7 +41,7 @@ export interface TokenConfig {
   /** Address that receives the caps + initial supply. Defaults to the connected wallet. */
   recipient: string
 
-  /** SPDX id (e.g. "MIT", "CC0-1.0") or "NONE" for proprietary. Affects the downloadable package only. */
+  /** SPDX id (e.g. "0BSD", "MIT") or "NONE" for proprietary. Affects the downloadable package only. */
   license: string
   /** Human-readable license name for the README (defaults to the SPDX id). */
   licenseName?: string

@@ -23,9 +23,9 @@ export const NO_LICENSE: SpdxLicense = {
   deprecated: false,
 }
 
-/** Ids surfaced first in the picker. CC0 is the project default. */
+/** Ids surfaced first in the picker. 0BSD is the project default; CC0 stays available. */
 export const POPULAR_LICENSE_IDS = [
-  'CC0-1.0',
+  '0BSD',
   'MIT',
   'Apache-2.0',
   'BSD-3-Clause',
@@ -37,9 +37,10 @@ export const POPULAR_LICENSE_IDS = [
   'MPL-2.0',
   'ISC',
   'Unlicense',
+  'CC0-1.0',
 ] as const
 
-export const DEFAULT_LICENSE_ID = 'CC0-1.0'
+export const DEFAULT_LICENSE_ID = '0BSD'
 
 type Fetcher = typeof fetch
 

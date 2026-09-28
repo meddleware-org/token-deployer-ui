@@ -73,7 +73,8 @@ async function openLicenseModal(): Promise<void> {
       <UiFieldHint field-id="license-select">
         Applies only to the downloadable Move source package — embedded in the LICENSE file and
         source headers. Has <b>no effect on the on-chain token</b> or its transferability. Choose
-        <b>CC0-1.0</b> (default) for public domain. Choose <b>None</b> to retain all rights.
+        <b>0BSD</b> (default) for a minimal permissive licence, or <b>CC0-1.0</b> for public domain.
+        Choose <b>None</b> to retain all rights.
       </UiFieldHint>
     </template>
     <template #default="{ attrs }">

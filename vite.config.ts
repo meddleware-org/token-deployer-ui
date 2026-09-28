@@ -30,9 +30,15 @@ function assertTreasuryConfigured(env: Record<string, string>): void {
 
 // The move-bytecode-template package ships a .wasm that must be served as an
 // asset; `wasm` is excluded from dep-optimization so its URL import resolves.
+/** Public origin used for the canonical URL + Open Graph tags (`%VITE_PUBLIC_URL%` in index.html). */
+const DEFAULT_PUBLIC_URL = 'https://sui-token-deployer.meddleware.co.uk'
+
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   if (command === 'build' && mode === 'production') assertTreasuryConfigured(env)
+  // Every mode (dev, e2e, production) resolves the placeholder; a white-label deployment overrides it
+  // with VITE_PUBLIC_URL (Docker build arg / CI var / .env file).
+  process.env.VITE_PUBLIC_URL = (env.VITE_PUBLIC_URL || DEFAULT_PUBLIC_URL).replace(/\/+$/, '')
 
   return {
     base: "/",

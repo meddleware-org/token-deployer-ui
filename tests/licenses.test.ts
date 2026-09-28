@@ -9,6 +9,7 @@ import {
 const LIST = {
   licenses: [
     { licenseId: 'MIT', name: 'MIT License', isOsiApproved: true, isDeprecatedLicenseId: false },
+    { licenseId: '0BSD', name: 'BSD Zero Clause License', isOsiApproved: true, isDeprecatedLicenseId: false },
     { licenseId: 'CC0-1.0', name: 'Creative Commons Zero v1.0 Universal', isOsiApproved: false, isDeprecatedLicenseId: false },
     { licenseId: 'GPL-1.0', name: 'GNU GPL v1.0 (deprecated)', isOsiApproved: false, isDeprecatedLicenseId: true },
   ],
@@ -38,12 +39,14 @@ describe('fetchLicenseList', () => {
     expect(cat.all[0]).toBe(NO_LICENSE)
     const ids = cat.all.map((l) => l.id)
     expect(ids).toContain('MIT')
-    expect(ids).toContain('CC0-1.0')
+    expect(ids).toContain('CC0-1.0') // still selectable
     expect(ids).not.toContain('GPL-1.0') // deprecated dropped
 
-    // popular ordering: CC0 before MIT
+    // popular ordering: the 0BSD default first, CC0 still offered
     const popIds = cat.popular.map((l) => l.id)
-    expect(popIds.indexOf('CC0-1.0')).toBeLessThan(popIds.indexOf('MIT'))
+    expect(popIds[0]).toBe('0BSD')
+    expect(popIds.indexOf('0BSD')).toBeLessThan(popIds.indexOf('MIT'))
+    expect(popIds).toContain('CC0-1.0')
   })
 
   it('caches the list (one network call across calls)', async () => {

@@ -66,6 +66,17 @@ describe('buildPackageFiles', () => {
     expect(buildPackageFiles({ config: baseConfig })['Move.toml']).toMatch(/^license = "MIT"$/m)
   })
 
+  it('rewrites the licence header and README line for the 0BSD default, whatever the template ships with', () => {
+    const f = buildPackageFiles({ config: { ...baseConfig, license: '0BSD', licenseName: 'BSD Zero Clause License' } })
+    const src = f['sources/mytoken.move']
+    expect(src.split('\n')[0]).toBe('// SPDX-License-Identifier: 0BSD')
+    expect(src.split('\n')[1]).toBe('// Licensed under the 0BSD license; see the LICENSE file.')
+    expect(src).not.toMatch(/CC0|public domain/)
+    expect(f['README.md']).toContain('BSD Zero Clause License — see the LICENSE file.')
+    expect(f['README.md']).not.toMatch(/CC0 1\.0 Universal/)
+    expect(f['Move.toml']).toMatch(/^license = "0BSD"$/m)
+  })
+
   it('handles a proprietary (NONE) license: no LICENSE file, UNLICENSED fields', () => {
     const cfg = { ...baseConfig, license: 'NONE' }
     const f = buildPackageFiles({ config: cfg, licenseText: 'ignored' })
