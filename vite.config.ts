@@ -38,7 +38,9 @@ export default defineConfig(({ command, mode }) => {
     base: "/",
     plugins: [vue()],
     optimizeDeps: {
-      exclude: ['@mysten/move-bytecode-template'],
+      // @meddleware/wallet-adapter ships TS + .vue source and holds the shared wallet singleton; if it
+      // were pre-bundled, its .vue files (served raw) would load a second copy of the singleton in dev.
+      exclude: ['@mysten/move-bytecode-template', '@meddleware/wallet-adapter'],
     },
     build: {
       target: 'esnext',
