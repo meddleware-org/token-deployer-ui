@@ -22,7 +22,7 @@ export type PersonalMessageSigner = (message: Uint8Array) => Promise<{ signature
  * When no gate is configured for the network (`ACCESS_GATE[network] == null`), the relay is
  * treated as OPEN (`hasAccess === true`) and this composable is inert — behaviour is
  * unchanged from before gating existed. When a gate IS configured, `checkOwnership` decides
- * access with a single `getOwnedObjects` call (the same cheap pattern as the relay health
+ * access with a single `listOwnedObjects` call (the same cheap pattern as the relay health
  * check), and `purchase`/`buildRelayAccessToken` drive the buy + prove flows.
  */
 export function useAccessGate(

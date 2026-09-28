@@ -8,7 +8,7 @@
 # Secrets required (repository or environment secrets):
 #   SUI_PRIV_TESTNET / SUI_PRIV_MAINNET  — bech32 suiprivkey1… for a funded deployer key.
 #   FEE_TREASURY_TESTNET / FEE_TREASURY_MAINNET — operator treasury address (fee recipient).
-#   RPC_TESTNET / RPC_MAINNET (optional) — JSON-RPC endpoint override (public testnet is gRPC-only).
+#   RPC_TESTNET / RPC_MAINNET (optional) — gRPC endpoint override (defaults to the public fullnodes).
 
 name: token-deployer real-chain e2e
 

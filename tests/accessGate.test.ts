@@ -25,21 +25,16 @@ const cfg: AccessGateConfig = {
 }
 
 function entry(objectId: string, gateId: string, uses?: number) {
+  // Core (gRPC) shape: struct fields are flat under `json`.
   return {
-    data: {
-      objectId,
-      content: {
-        fields: {
-          data: {
-            fields: {
-              gate_id: gateId,
-              variant:
-                uses === undefined
-                  ? { variant: 'UnlimitedPass', fields: {} }
-                  : { variant: 'SingleUse', fields: { uses_remaining: String(uses) } },
-            },
-          },
-        },
+    objectId,
+    json: {
+      data: {
+        gate_id: gateId,
+        variant:
+          uses === undefined
+            ? { variant: 'UnlimitedPass', fields: {} }
+            : { variant: 'SingleUse', fields: { uses_remaining: String(uses) } },
       },
     },
   }
@@ -57,20 +52,30 @@ describe('accessGate lib', () => {
       usesRemaining: null,
     })
     expect(parseOwnedAccessNft(entry('0x2', GATE, 5))?.usesRemaining).toBe(5)
-    expect(parseOwnedAccessNft({ data: { objectId: '0x9', content: { fields: {} } } })).toBeNull()
+    expect(parseOwnedAccessNft({ objectId: '0x9', json: {} })).toBeNull()
   })
 
-  it('fetchAccessNfts filters by gate and passes the StructType filter', async () => {
+  it('still parses the legacy JSON-RPC nested `.fields` shape', () => {
+    const legacy = {
+      objectId: '0x3',
+      json: { fields: { data: { fields: { gate_id: GATE, variant: { variant: 'SingleUse', fields: { uses_remaining: '2' } } } } } },
+    }
+    expect(parseOwnedAccessNft(legacy)).toEqual({ objectId: '0x3', gateId: GATE, usesRemaining: 2 })
+  })
+
+  it('fetchAccessNfts filters by gate and passes the type filter', async () => {
     const client: OwnedObjectsClient = {
-      getOwnedObjects: vi.fn(async () => ({
-        data: [entry('0x1', GATE), entry('0x2', '0xother', 1)],
-      })),
+      core: {
+        listOwnedObjects: vi.fn(async () => ({
+          objects: [entry('0x1', GATE), entry('0x2', '0xother', 1)],
+        })),
+      },
     }
     const nfts = await fetchAccessNfts(client, '0xowner', NFT_TYPE, GATE)
     expect(nfts).toHaveLength(1)
     expect(nfts[0].objectId).toBe('0x1')
-    expect(client.getOwnedObjects).toHaveBeenCalledWith(
-      expect.objectContaining({ owner: '0xowner', filter: { StructType: NFT_TYPE } }),
+    expect(client.core.listOwnedObjects).toHaveBeenCalledWith(
+      expect.objectContaining({ owner: '0xowner', type: NFT_TYPE, include: { json: true } }),
     )
   })
 

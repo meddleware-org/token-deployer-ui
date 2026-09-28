@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://tokens.meddleware.co.uk/sitemap.xml
+Sitemap: https://sui-token-deployer.meddleware.co.uk/sitemap.xml

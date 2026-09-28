@@ -12,7 +12,7 @@
 
 import { SuiGrpcClient } from '@mysten/sui/grpc'
 import { walrus, blobIdFromInt } from '@mysten/walrus'
-import type { SuiJsonRpcClient } from '@mysten/sui/jsonRpc'
+import type { ClientWithCoreApi } from '@mysten/sui/client'
 import { WALRUS_RELAY_HOSTS, WALRUS_MAX_TIP_MIST, WALRUS_RPC_URLS } from '../config.js'
 
 export { ICON_EPOCHS } from './walrus-constants.js'
@@ -108,32 +108,43 @@ export interface OwnedBlob {
 }
 
 /**
+ * Unwrap a Move-struct field bag from a core `json` value. The gRPC/core API returns struct
+ * fields flat; the old JSON-RPC shape nested them under `.fields`. Tolerate both, since the
+ * SDK documents that the `json` shape may vary between API implementations.
+ */
+function structFields(v: unknown): Record<string, unknown> | undefined {
+  if (!v || typeof v !== 'object') return undefined
+  const o = v as Record<string, unknown>
+  const nested = o.fields
+  return nested && typeof nested === 'object' ? (nested as Record<string, unknown>) : o
+}
+
+/**
  * Return all Walrus blobs owned by `owner`. Uses `getBlobType()` for dynamic
  * package resolution so no hardcoded addresses are needed.
  */
 export async function fetchOwnedWalrusBlobs(
-  suiClient: SuiJsonRpcClient,
+  suiClient: ClientWithCoreApi,
   walrusClient: ReturnType<typeof createWalrusClient>,
   owner: string,
 ): Promise<OwnedBlob[]> {
   const blobType = await walrusClient.walrus.getBlobType()
-  const { data } = await suiClient.getOwnedObjects({
+  const { objects } = await suiClient.core.listOwnedObjects({
     owner,
-    filter: { StructType: blobType },
-    options: { showContent: true },
+    type: blobType,
+    include: { json: true },
   })
   const blobs: OwnedBlob[] = []
-  for (const item of data) {
-    if (!item.data) continue
-    const fields = (item.data.content as { fields?: Record<string, unknown> } | undefined)?.fields
+  for (const obj of objects) {
+    const fields = structFields(obj.json)
     if (!fields) continue
-    const storage = fields.storage as { fields?: { end_epoch?: unknown } } | undefined
+    const storage = structFields(fields.storage)
     try {
       blobs.push({
-        objectId: item.data.objectId,
+        objectId: obj.objectId,
         blobId: blobIdFromInt(BigInt(fields.blob_id as string)),
         size: Number(fields.size),
-        endEpoch: Number(storage?.fields?.end_epoch ?? 0),
+        endEpoch: Number(storage?.end_epoch ?? 0),
         certified: fields.certified_epoch !== null && fields.certified_epoch !== undefined,
       })
     } catch {

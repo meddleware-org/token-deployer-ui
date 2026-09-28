@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
-import { deployToken } from '../src/lib/deploy.js'
-import type { Executor, SuiTxResult } from '../src/lib/deploy.js'
+import { deployToken, toSuiTxResult } from '../src/lib/deploy.js'
+import type { CoreExecutionResult, Executor, SuiTxResult } from '../src/lib/deploy.js'
+import { extractPublishResult } from '../src/lib/buildPublishTx.js'
 import type { TokenConfig } from '../src/lib/types.js'
 
 const sender = '0x' + '1'.repeat(64)
@@ -77,5 +78,72 @@ describe('deployToken', () => {
         gasBudget: 1n, executor: exec,
       }),
     ).rejects.toThrow(/InsufficientGas/)
+  })
+})
+
+describe('toSuiTxResult (gRPC core execution → SuiTxResult)', () => {
+  const PKG = '0x' + 'bb'.repeat(32)
+  const coinType = `${PKG}::mytoken::MYTOKEN`
+  const written = (objectId: string, idOperation: 'Created' | 'None', version: string) => ({
+    objectId,
+    inputState: 'Unknown',
+    inputVersion: null,
+    inputDigest: null,
+    inputOwner: null,
+    outputState: 'ObjectWrite',
+    outputVersion: version,
+    outputDigest: `D${version}`,
+    outputOwner: null,
+    idOperation,
+  })
+  const tx = (success: boolean) => ({
+    digest: 'TXDIGEST',
+    status: success ? { success: true, error: null } : { success: false, error: { message: 'MoveAbort(7)' } },
+    effects: {
+      changedObjects: [
+        { ...written(PKG, 'Created', '1'), outputState: 'PackageWrite' },
+        written('0xT', 'Created', '5'),
+        written('0xC', 'Created', '5'),
+        written('0xGAS', 'None', '5'),
+      ],
+    },
+    objectTypes: {
+      // gRPC may render framework addresses in long form.
+      '0xT': `0x${'0'.repeat(63)}2::coin::TreasuryCap<${coinType}>`,
+      '0xC': `0x2::coin_registry::Currency<${coinType}>`,
+      '0xGAS': '0x2::coin::Coin<0x2::sui::SUI>',
+    },
+  })
+
+  it('maps package writes, created and mutated objects', () => {
+    const res = toSuiTxResult({ $kind: 'Transaction', Transaction: tx(true) } as unknown as CoreExecutionResult)
+    expect(res.digest).toBe('TXDIGEST')
+    expect(res.effects?.status?.status).toBe('success')
+    expect(res.objectChanges).toEqual([
+      { type: 'published', packageId: PKG },
+      { type: 'created', objectId: '0xT', objectType: expect.stringContaining('::coin::TreasuryCap<'), version: '5', digest: 'D5' },
+      { type: 'created', objectId: '0xC', objectType: `0x2::coin_registry::Currency<${coinType}>`, version: '5', digest: 'D5' },
+      { type: 'mutated', objectId: '0xGAS', objectType: '0x2::coin::Coin<0x2::sui::SUI>', version: '5', digest: 'D5' },
+    ])
+  })
+
+  it('feeds extractPublishResult (package id, coin type, currency ref)', () => {
+    const res = toSuiTxResult({ $kind: 'Transaction', Transaction: tx(true) } as unknown as CoreExecutionResult)
+    const out = extractPublishResult(res.objectChanges ?? [], {
+      network: 'testnet', digest: res.digest, feeRecipient: treasury, feeMist: 0n,
+    })
+    expect(out).toMatchObject({
+      packageId: PKG,
+      coinType,
+      treasuryCapId: '0xT',
+      currencyId: '0xC',
+      currencyVersion: '5',
+      currencyDigest: 'D5',
+    })
+  })
+
+  it('reports a failed transaction as a failure status (not a throw)', () => {
+    const res = toSuiTxResult({ $kind: 'FailedTransaction', FailedTransaction: tx(false) } as unknown as CoreExecutionResult)
+    expect(res.effects?.status).toEqual({ status: 'failure', error: 'MoveAbort(7)' })
   })
 })

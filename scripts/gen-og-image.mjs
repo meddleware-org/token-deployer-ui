@@ -14,13 +14,13 @@ h1 .accent{color:#6ea8fe}
 p{font-size:34px;line-height:1.35;color:#aebfd6;max-width:960px}
 .row{display:flex;gap:18px;margin-top:52px}
 .chip{font-size:24px;color:#cfe0f7;background:#16233d;border:1px solid #26365a;border-radius:10px;padding:12px 20px}
-.url{position:absolute;bottom:56px;right:80px;font-size:26px;color:#6ea8fe;font-weight:600}
+.url{position:absolute;top:84px;right:80px;font-size:26px;color:#6ea8fe;font-weight:600}
 </style></head><body>
 <div class="badge">Sui &middot; client-side</div>
 <h1>Create your own <span class="accent">Sui coin</span><br>in the browser</h1>
 <p>Your wallet signs and pays gas &mdash; nothing is compiled or signed on a server. Keep the full, verifiable source package.</p>
 <div class="row"><div class="chip">No server</div><div class="chip">No custody</div><div class="chip">Full source included</div></div>
-<div class="url">tokens.meddleware.co.uk</div>
+<div class="url">sui-token-deployer.meddleware.co.uk</div>
 </body></html>`
 
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome' })

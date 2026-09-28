@@ -19,25 +19,21 @@ export interface DeployedToken {
 /** List the coins `owner` has deployed on `network` (via owned `TreasuryCap<T>` objects). */
 export async function listMyTokens(owner: string, network: Network): Promise<DeployedToken[]> {
   const client = getReadClient(network)
-  // The StructType filter without type params matches every TreasuryCap<T> instantiation.
-  const res = await client.getOwnedObjects({
-    owner,
-    filter: { StructType: '0x2::coin::TreasuryCap' },
-    options: { showType: true },
-  })
+  // A type filter without type params matches every TreasuryCap<T> instantiation.
+  const { objects } = await client.listOwnedObjects({ owner, type: '0x2::coin::TreasuryCap' })
   const seen = new Set<string>()
   const out: DeployedToken[] = []
-  for (const item of res.data ?? []) {
-    const data = item.data
-    const m = String(data?.type ?? '').match(/^0x2::coin::TreasuryCap<(.+)>$/)
-    if (!m || !data) continue
+  for (const obj of objects) {
+    // gRPC may render the framework address in long form (0x000…02).
+    const m = obj.type.match(/^0x0*2::coin::TreasuryCap<(.+)>$/)
+    if (!m) continue
     const coinType = m[1]
     if (seen.has(coinType)) continue
     seen.add(coinType)
     out.push({
       coinType,
       packageId: coinType.split('::')[0] ?? '',
-      treasuryCapId: data.objectId,
+      treasuryCapId: obj.objectId,
       label: coinType.split('::').pop() ?? coinType,
     })
   }

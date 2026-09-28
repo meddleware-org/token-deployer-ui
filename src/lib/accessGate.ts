@@ -30,27 +30,41 @@ export interface OwnedAccessNft {
   usesRemaining: number | null
 }
 
-/** Minimal structural subset of the JSON-RPC client used here. */
+/** Minimal structural subset of the core (gRPC) client used here. */
 export interface OwnedObjectsClient {
-  getOwnedObjects(params: {
-    owner: string
-    filter?: { StructType: string }
-    options?: { showContent?: boolean; showType?: boolean }
-  }): Promise<{ data: unknown[] }>
+  core: {
+    listOwnedObjects(params: {
+      owner: string
+      type?: string
+      include?: { json?: boolean }
+    }): Promise<{ objects: unknown[] }>
+  }
+}
+
+/**
+ * Unwrap a Move-struct field bag from a core `json` value. The gRPC/core API returns struct
+ * fields flat; the old JSON-RPC shape nested them under `.fields`. Tolerate both.
+ */
+function structFields(v: unknown): Record<string, any> | undefined {
+  if (!v || typeof v !== 'object') return undefined
+  const o = v as Record<string, any>
+  const nested = o.fields
+  return nested && typeof nested === 'object' ? (nested as Record<string, any>) : o
 }
 
 function parseUsesRemaining(variant: any): number | null {
   if (variant == null) return null
+  const tag: string | undefined = variant.variant ?? variant.type ?? variant.$kind
+  if (tag === 'UnlimitedPass') return null
   const fields = variant.fields ?? variant
   const ur = fields?.uses_remaining ?? fields?.SingleUse?.uses_remaining
   return ur != null ? Number(ur) : null
 }
 
-/** Parse a `getOwnedObjects` entry into an access NFT, or `null` if it isn't one. */
+/** Parse a `listOwnedObjects` entry into an access NFT, or `null` if it isn't one. */
 export function parseOwnedAccessNft(entry: any): OwnedAccessNft | null {
-  const obj = entry?.data ?? entry
-  const objectId: string | undefined = obj?.objectId
-  const inner = obj?.content?.fields?.data?.fields
+  const objectId: string | undefined = entry?.objectId
+  const inner = structFields(structFields(entry?.json)?.data)
   const gateId: string | undefined = inner?.gate_id ?? inner?.gateId
   if (!objectId || !gateId) return null
   return { objectId, gateId, usesRemaining: parseUsesRemaining(inner?.variant) }
@@ -63,12 +77,12 @@ export async function fetchAccessNfts(
   nftType: string,
   gateId?: string,
 ): Promise<OwnedAccessNft[]> {
-  const { data } = await client.getOwnedObjects({
+  const { objects } = await client.core.listOwnedObjects({
     owner,
-    filter: { StructType: nftType },
-    options: { showContent: true, showType: true },
+    type: nftType,
+    include: { json: true },
   })
-  const parsed = (data ?? [])
+  const parsed = (objects ?? [])
     .map(parseOwnedAccessNft)
     .filter((n): n is OwnedAccessNft => n !== null)
   return gateId ? parsed.filter((n) => n.gateId === gateId) : parsed

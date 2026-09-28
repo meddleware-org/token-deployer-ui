@@ -18,7 +18,7 @@
 #   VITE_WALRUS_RELAY_MAINNET           — operator relay URL for mainnet (optional)
 #   VITE_WALRUS_RPC_TESTNET             — gRPC fullnode for Walrus testnet (optional)
 #   VITE_WALRUS_RPC_MAINNET             — gRPC fullnode for Walrus mainnet (optional)
-#   VITE_RPC_TESTNET / VITE_RPC_MAINNET — override JSON-RPC fullnode URLs (optional)
+#   VITE_RPC_TESTNET / VITE_RPC_MAINNET — override gRPC fullnode URLs (optional)
 #   VITE_ACCESS_GATE_ID_{NET}           — operator's Gate shared object ID (optional)
 #   VITE_ACCESS_GATE_NFT_TYPE_{NET}     — access NFT type (optional)
 #   VITE_ACCESS_GATE_SOULBOUND_{NET}    — "true" if soulbound (optional)

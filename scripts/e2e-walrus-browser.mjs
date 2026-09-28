@@ -8,15 +8,12 @@
 
 import { readFileSync } from 'node:fs'
 import { chromium } from 'playwright'
-import { SuiJsonRpcClient } from '@mysten/sui/jsonRpc'
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519'
 import { toBase64 } from '@mysten/sui/utils'
 
 const APP_URL = process.env.APP_URL || 'http://localhost:4173'
-const RPC = process.env.RPC || 'https://sui-testnet-rpc.publicnode.com'
 const ICON = '/tmp/test-icon.svg'
 
-const _client = new SuiJsonRpcClient({ url: RPC, network: 'testnet' })
 const keypair = Ed25519Keypair.fromSecretKey(process.env.SUI_PRIV)
 const address = keypair.toSuiAddress()
 
@@ -30,7 +27,7 @@ async function main() {
   const browser = await chromium.launch({
     headless: true,
     executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome',
-    // Bypass CORS so the in-browser tx.build() can hit the testnet RPC.
+    // Bypass CORS so the in-browser tx.build() can hit the testnet gRPC endpoint.
     args: ['--disable-web-security', '--disable-features=IsolateOrigins,site-per-process'],
   })
   const page = await browser.newPage()

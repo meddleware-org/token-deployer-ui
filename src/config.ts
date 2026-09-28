@@ -7,16 +7,16 @@ import type { AccessGateConfig } from './lib/accessGate.js'
 const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {}
 
 /**
- * Public JSON-RPC fullnode URLs per network (overridable via `VITE_RPC_*`).
+ * Public gRPC fullnode URLs per network (overridable via `VITE_RPC_*`).
  *
- * NOTE: the official testnet fullnode (`fullnode.testnet.sui.io`) now serves gRPC
- * only and returns 404 for JSON-RPC, so a JSON-RPC-capable endpoint is used for
- * testnet. Operators should set `VITE_RPC_*` to their preferred (often paid) RPC
- * for production to avoid public rate limits.
+ * These are **gRPC(-web)** endpoints for `SuiGrpcClient` — public fullnodes have
+ * deprecated JSON-RPC, so a JSON-RPC-only URL will not work here. Operators should
+ * set `VITE_RPC_*` to their preferred (often paid) gRPC endpoint for production to
+ * avoid public rate limits.
  */
 export const RPC_URLS: Record<Network, string> = {
   mainnet: env.VITE_RPC_MAINNET || 'https://fullnode.mainnet.sui.io:443',
-  testnet: env.VITE_RPC_TESTNET || 'https://sui-testnet-rpc.publicnode.com',
+  testnet: env.VITE_RPC_TESTNET || 'https://fullnode.testnet.sui.io:443',
   localnet: env.VITE_RPC_LOCALNET || 'http://127.0.0.1:9000',
 }
 
@@ -89,15 +89,12 @@ export function isOperatorRelayConfigured(network: WalrusNetwork): boolean {
 /**
  * gRPC fullnode URL for the Walrus icon-upload client (a `SuiGrpcClient`).
  *
- * IMPORTANT: this is a **gRPC** endpoint and is intentionally *separate* from
- * {@link RPC_URLS} (the JSON-RPC endpoints used by the deploy path). The two protocols
- * are not interchangeable — pointing the Walrus gRPC client at a JSON-RPC URL breaks it —
- * so this has its own `VITE_WALRUS_RPC_*` override rather than reusing `VITE_RPC_*`.
- * Defaults to the public gRPC fullnodes (rate-limited); set your own for production.
+ * Defaults to {@link RPC_URLS} (also gRPC); `VITE_WALRUS_RPC_*` overrides it only when
+ * Walrus traffic should use a different fullnode from the deploy path.
  */
 export const WALRUS_RPC_URLS: Record<WalrusNetwork, string> = {
-  testnet: env.VITE_WALRUS_RPC_TESTNET || 'https://fullnode.testnet.sui.io:443',
-  mainnet: env.VITE_WALRUS_RPC_MAINNET || 'https://fullnode.mainnet.sui.io:443',
+  testnet: env.VITE_WALRUS_RPC_TESTNET || RPC_URLS.testnet,
+  mainnet: env.VITE_WALRUS_RPC_MAINNET || RPC_URLS.mainnet,
 }
 
 /**

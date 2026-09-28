@@ -68,9 +68,9 @@ host dashboard. See [.env.example](.env.example) for the full list.
 | --- | --- | --- |
 | `VITE_FEE_TREASURY_TESTNET` / `_MAINNET` | Operator treasury that receives the fee. **A production build fails if either is the zero address** (bypass with `VITE_ALLOW_UNSET_TREASURY=1`). | committed operator address |
 | `VITE_FEE_MIST` | Flat fee split from the user's gas coin. | `1000000000` (1 SUI) |
-| `VITE_RPC_TESTNET` / `_MAINNET` | JSON-RPC endpoint (set a paid RPC for production). | public endpoints |
+| `VITE_RPC_TESTNET` / `_MAINNET` | gRPC fullnode endpoint (set a paid RPC for production). JSON-RPC-only endpoints do not work. | public fullnodes |
 | `VITE_PUBLISH_GAS_BUDGET` | Publish gas budget (MIST). | `500000000` |
-| `VITE_PUBLIC_URL` | Site origin for canonical/OG/JSON-LD URLs. | `https://tokens.meddleware.co.uk` |
+| `VITE_PUBLIC_URL` | Site origin for canonical/OG/JSON-LD URLs. | `https://sui-token-deployer.meddleware.co.uk` |
 | `VITE_WALRUS_RELAY_TESTNET` / `_MAINNET` | Your own upload relay (to collect the tip). Unset → public Mysten relay (earns nothing). | public relay |
 | `VITE_WALRUS_MAX_TIP_MIST` | Client-side max relay tip. **Must exceed your relay's tip** or uploads fail. | `50000000` (0.05 SUI) |
 | `VITE_ICON_MAX_BYTES` / `VITE_ICON_ALLOWED_TYPES` | Client icon size/type gate (UX only). | `102400` / PNG,JPEG,WebP,SVG |
@@ -192,7 +192,7 @@ testnet mode with the RPC pointed at the local node).
 | `SUI_PRIV` | bech32 `suiprivkey1…` for a **funded** deployer key. Export the CLI key: `sui keytool export --key-identity <addr>`. Never faucet-funded on a real network. |
 | `VITE_FEE_TREASURY_TESTNET` / `_MAINNET` | Operator treasury baked into the build (already set in `.env.production`). The build fails if it is the zero address. |
 | `E2E_FEE_ADDR` | The treasury to watch for the fee-delta assertion — set it equal to the built treasury. If unset, the fee check is skipped (the app still charges the fee). |
-| `VITE_RPC_TESTNET` / `_MAINNET` and `E2E_RPC` | JSON-RPC endpoint for the build (browser) and the node-side verifier. Use a JSON-RPC-capable endpoint — the official testnet fullnode is gRPC-only. |
+| `VITE_RPC_TESTNET` / `_MAINNET` and `E2E_RPC` | gRPC endpoint for the build (browser) and the node-side verifier. Defaults to the public fullnodes. |
 | `E2E_MAINNET_CONFIRM=1` | **Mainnet only.** Without it the mainnet runner aborts cleanly (fail-safe default) so it can never publish by accident. |
 
 A full fee-charging run needs the key to hold **≥ gas + fee** (~0.5 SUI gas + 1 SUI fee = ~1.5 SUI).
@@ -203,8 +203,6 @@ Example (testnet):
 
 ```bash
 export SUI_PRIV="$(sui keytool export --key-identity 0xYOURADDR --json | jq -r .exportedPrivateKey)"
-VITE_RPC_TESTNET=https://sui-testnet-rpc.publicnode.com \
-E2E_RPC=https://sui-testnet-rpc.publicnode.com \
 VITE_FEE_TREASURY_TESTNET=0xYOURTREASURY \
 E2E_FEE_ADDR=0xYOURTREASURY \
 npm run e2e:testnet

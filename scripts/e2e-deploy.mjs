@@ -19,7 +19,7 @@
 
 import { readFileSync, existsSync } from 'node:fs'
 import { chromium } from 'playwright'
-import { SuiJsonRpcClient } from '@mysten/sui/jsonRpc'
+import { SuiGrpcClient } from '@mysten/sui/grpc'
 import { requestSuiFromFaucetV2 } from '@mysten/sui/faucet'
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519'
 import { Transaction } from '@mysten/sui/transactions'
@@ -37,7 +37,7 @@ const APP_NETWORK = NETWORK === 'mainnet' ? 'mainnet' : 'testnet'
 
 const DEFAULT_RPC = {
   localnet: 'http://127.0.0.1:9000',
-  testnet: 'https://sui-testnet-rpc.publicnode.com',
+  testnet: 'https://fullnode.testnet.sui.io:443',
   mainnet: 'https://fullnode.mainnet.sui.io:443',
 }
 const RPC = process.env.E2E_RPC || DEFAULT_RPC[NETWORK]
@@ -83,9 +83,15 @@ if (NETWORK === 'localnet') {
 }
 const address = keypair.toSuiAddress()
 
-// Node-side client points at the PHYSICAL RPC; its `network` label is the app network so the
-// built transaction's chain identifier matches what the wallet/app sign under.
-const client = new SuiJsonRpcClient({ url: RPC, network: APP_NETWORK })
+// Node-side gRPC client points at the PHYSICAL RPC; its `network` label is the app network so
+// the built transaction's chain identifier matches what the wallet/app sign under.
+const client = new SuiGrpcClient({ baseUrl: RPC, network: APP_NETWORK })
+
+/** Total SUI balance (MIST) of `owner`. */
+async function suiBalance(owner) {
+  const { balance } = await client.getBalance({ owner })
+  return BigInt(balance.balance)
+}
 
 const EXPECT_FEE = Boolean(FEE_ADDR) && FEE_ADDR !== ZERO_ADDR
 
@@ -95,19 +101,16 @@ async function main() {
   if (NETWORK === 'localnet') {
     await requestSuiFromFaucetV2({ host: FAUCET, recipient: address })
     for (let i = 0; i < 25; i++) {
-      const b = await client.getBalance({ owner: address })
-      if (BigInt(b.totalBalance) > 0n) break
+      if ((await suiBalance(address)) > 0n) break
       await new Promise((r) => setTimeout(r, 1000))
     }
   }
 
-  const balance = BigInt((await client.getBalance({ owner: address })).totalBalance)
+  const balance = await suiBalance(address)
   console.log('sender:', address, 'balance:', balance.toString(), 'MIST')
   if (balance === 0n) fail(`sender ${address} has no SUI on ${NETWORK}`)
 
-  const feeBefore = EXPECT_FEE
-    ? BigInt((await client.getBalance({ owner: FEE_ADDR })).totalBalance)
-    : 0n
+  const feeBefore = EXPECT_FEE ? await suiBalance(FEE_ADDR) : 0n
 
   // Browser resolution: explicit CHROME_PATH → a locally-installed Chrome → Playwright's
   // bundled Chromium (CI installs it via `npx playwright install chromium`).
@@ -167,7 +170,7 @@ async function main() {
 
   // Connect: open the dialog, select the app network if it differs from the testnet default,
   // then pick the injected wallet.
-  await page.getByRole('button', { name: 'Connect Wallet' }).click()
+  await page.getByRole('button', { name: 'Connect Wallet', exact: true }).click()
   if (APP_NETWORK !== 'testnet') {
     await page.locator('#dialog-network-select').selectOption(APP_NETWORK)
   }
@@ -175,15 +178,17 @@ async function main() {
   await page.getByText(/Mock Test Wallet ·/).waitFor({ timeout: 10000 })
   console.log('wallet connected in UI')
 
-  // Fill the form.
+  // Fill the wizard: identity → token → settings (defaults) → terms (first run) → review.
+  await page.locator('#package').fill('browser_coin')
+  await page.locator('#module').fill('browsercoin')
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await page.locator('#name').fill('Browser Coin')
   await page.locator('#symbol').fill('BRWC')
   await page.locator('#description').fill('Deployed via headless browser e2e')
   await page.locator('#decimals').fill('6')
-  await page.locator('#package').fill('browser_coin')
-  await page.locator('#module').fill('browsercoin')
-
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await page.getByRole('button', { name: /Review & deploy/ }).click()
+  await page.getByRole('button', { name: /I understand — continue/ }).click()
   await page.getByRole('button', { name: /Confirm & deploy/ }).click()
   console.log('confirmed; deploying (real publish + confirmation)…')
 
@@ -208,7 +213,7 @@ async function main() {
   if (!coinType.includes('::browsercoin::BROWSERCOIN')) fail(`unexpected coin type: ${coinType}`)
 
   if (EXPECT_FEE) {
-    const feeAfter = BigInt((await client.getBalance({ owner: FEE_ADDR })).totalBalance)
+    const feeAfter = await suiBalance(FEE_ADDR)
     const feeDelta = feeAfter - feeBefore
     console.log('fee delivered this run:', feeDelta.toString(), 'MIST (to', FEE_ADDR + ')')
     if (feeDelta !== EXPECT_FEE_MIST) fail(`expected ${EXPECT_FEE_MIST} MIST fee this run, got ${feeDelta}`)

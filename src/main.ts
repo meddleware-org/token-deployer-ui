@@ -8,7 +8,8 @@ import './component-styles.css'
 import { configureWasm } from './lib/template.js'
 // Static: readClient is already in the main chunk (IconPicker, WalrusBlobBrowser and listMyTokens
 // import it), so a dynamic import in the E2E block below could not split it out anyway.
-import { getReadClient } from './lib/readClient.js'
+import { getReadClient, setReadClient } from './lib/readClient.js'
+import type { SuiGrpcClient } from '@mysten/sui/grpc'
 import { useColorMode, useSeason } from '@meddleware/ui'
 
 // Apply the colour mode before mount so there is no theme flash. Defaults to
@@ -25,72 +26,54 @@ import wasmUrl from '@mysten/move-bytecode-template/web/move_bytecode_template_b
 // doesn't block initial page load.
 configureWasm(wasmUrl)
 
-// E2E-only: register mock wallet and expose getSuiClient for headless tests.
+// E2E-only: stub the Sui client, register a mock wallet and expose getSuiClient for headless tests.
 // Wrapped in async IIFE to ensure wallet is registered BEFORE app mounts (timing critical).
 // Tree-shaking removes this entire block from production when VITE_E2E !== '1'.
 ;(async () => {
   if (import.meta.env.VITE_E2E === '1') {
     const { getWallets } = await import('@mysten/wallet-standard')
 
-    // Mock fetch globally for RPC requests so Cypress intercepts are bypassed entirely
-    const originalFetch = globalThis.fetch
-    const publishDigest = '0x' + 'aa'.repeat(32)
+    // Stub gRPC client in place of the network (gRPC-web is binary, so it cannot be faked
+    // at the fetch layer). Returns a successful publish whose effects carry the created
+    // TreasuryCap/MetadataCap, and empty owned-object lists.
+    const publishDigest = 'E2E' + 'a'.repeat(41)
     const packageId = '0x' + 'bb'.repeat(32)
-    const treasureCapId = '0x' + 'cc'.repeat(32)
+    const treasuryCapId = '0x' + 'cc'.repeat(32)
     const metadataCapId = '0x' + 'dd'.repeat(32)
-
-    const mockRpcResponse = {
-      digest: publishDigest,
-      effects: {
-        status: { status: 'success' },
-        gasUsed: { computationCost: '1000', storageCost: '2000', storageRebate: '0' },
+    const created = (objectId: string) => ({
+      objectId,
+      outputState: 'ObjectWrite',
+      idOperation: 'Created',
+      outputVersion: '1',
+      outputDigest: publishDigest,
+    })
+    const executed = {
+      $kind: 'Transaction',
+      Transaction: {
+        digest: publishDigest,
+        status: { success: true, error: null },
+        effects: {
+          changedObjects: [
+            { objectId: packageId, outputState: 'PackageWrite', idOperation: 'Created' },
+            created(treasuryCapId),
+            created(metadataCapId),
+          ],
+        },
+        objectTypes: {
+          [treasuryCapId]: `0x2::coin::TreasuryCap<${packageId}::mytoken::MYTOKEN>`,
+          [metadataCapId]: `0x2::coin_registry::MetadataCap<${packageId}::mytoken::MYTOKEN>`,
+        },
       },
-      objectChanges: [
-        { type: 'published', packageId },
-        {
-          type: 'created',
-          objectType: `0x2::coin::TreasuryCap<${packageId}::mytoken::MYTOKEN>`,
-          objectId: treasureCapId,
-        },
-        {
-          type: 'created',
-          objectType: `0x2::coin_registry::MetadataCap<${packageId}::mytoken::MYTOKEN>`,
-          objectId: metadataCapId,
-        },
-      ],
-      events: [],
-      transaction: null,
-      balanceChanges: null,
     }
-
-    globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = typeof input === 'string' ? input : input.toString()
-      const method = init?.method || 'GET'
-      const isRpcCall = (url.includes('fullnode') || url.includes('rpc')) && method === 'POST'
-
-      if (isRpcCall) {
-        const body = init?.body ? JSON.parse(String(init.body)) : {}
-        const rpcMethod = body.method
-
-        if (import.meta.env.VITE_E2E === '1') {
-          console.log('[E2E Fetch Mock]', rpcMethod, 'URL:', url)
-        }
-
-        const result =
-          rpcMethod === 'sui_executeTransactionBlock' || rpcMethod === 'sui_getTransactionBlock'
-            ? mockRpcResponse
-            : rpcMethod === 'suix_getCoins' || rpcMethod === 'suix_getBalance'
-              ? { data: [], nextCursor: null, hasNextPage: false }
-              : null
-
-        return new Response(JSON.stringify({ jsonrpc: '2.0', id: body.id || 1, result }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        })
-      }
-
-      return originalFetch(input, init)
-    }
+    const noObjects = async () => ({ objects: [], hasNextPage: false, cursor: null })
+    const stubClient = {
+      executeTransaction: async () => executed,
+      waitForTransaction: async () => executed,
+      listOwnedObjects: noObjects,
+      core: { listOwnedObjects: noObjects },
+    } as unknown as SuiGrpcClient
+    setReadClient('testnet', stubClient)
+    setReadClient('mainnet', stubClient)
 
     const E2E_ADDR = '0x' + 'a'.repeat(64)
     const E2E_PUB_KEY = new Uint8Array(32)

@@ -1,16 +1,17 @@
 import { readFileSync } from 'node:fs';
 import { bcs } from '@mysten/bcs';
 import * as tpl from '@mysten/move-bytecode-template';
-import { SuiJsonRpcClient } from '@mysten/sui/jsonRpc';
+import { SuiGrpcClient } from '@mysten/sui/grpc';
 import { requestSuiFromFaucetV2 } from '@mysten/sui/faucet';
 import { Transaction } from '@mysten/sui/transactions';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { toBase64 } from '@mysten/sui/utils';
+import { toSuiTxResult } from '../src/lib/deploy.ts';
 
 const init = tpl.default ?? tpl.init;
 try { if (typeof init === 'function') await init(); } catch {}
 
-const client = new SuiJsonRpcClient({ url: 'http://127.0.0.1:9000' });
+const client = new SuiGrpcClient({ baseUrl: 'http://127.0.0.1:9000', network: 'localnet' });
 
 const orig = new Uint8Array(readFileSync(new URL('../src/move-template/sui_token_template.mv', import.meta.url)));
 const json = tpl.deserialize(orig);
@@ -29,7 +30,7 @@ const addr = kp.toSuiAddress();
 console.log('address:', addr);
 await requestSuiFromFaucetV2({ host: 'http://127.0.0.1:9123', recipient: addr });
 let bal = '0';
-for (let i=0;i<25;i++){ const b = await client.getBalance({ owner: addr }); if (BigInt(b.totalBalance) > 0n){ bal=b.totalBalance; break;} await new Promise(r=>setTimeout(r,1000)); }
+for (let i=0;i<25;i++){ const { balance } = await client.getBalance({ owner: addr }); if (BigInt(balance.balance) > 0n){ bal=balance.balance; break;} await new Promise(r=>setTimeout(r,1000)); }
 console.log('balance:', bal);
 
 const tx = new Transaction();
@@ -39,7 +40,7 @@ tx.transferObjects([upgradeCap], addr);
 tx.setGasBudget(500000000);
 
 try {
-  const res = await client.signAndExecuteTransaction({ signer: kp, transaction: tx, options: { showEffects: true, showObjectChanges: true } });
+  const res = toSuiTxResult(await client.signAndExecuteTransaction({ signer: kp, transaction: tx, include: { effects: true, objectTypes: true } }));
   const status = res.effects?.status?.status;
   console.log('\nstatus:', status);
   if (status !== 'success') { console.log('ERR:', JSON.stringify(res.effects?.status)); process.exit(1); }

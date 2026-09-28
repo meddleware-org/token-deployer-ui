@@ -2,6 +2,7 @@
 // Decoupled from the wallet via an `Executor` so it is unit-testable.
 
 import type { Transaction } from '@mysten/sui/transactions'
+import type { SuiClientTypes } from '@mysten/sui/client'
 import { patchTemplateModule } from './template.js'
 import {
   buildPublishTransaction,
@@ -23,6 +24,41 @@ export interface SuiTxResult {
     digest?: string
   }[]
   effects?: { status?: { status?: string; error?: string } }
+}
+
+/** The core-API execution result {@link toSuiTxResult} consumes (effects + object types). */
+export type CoreExecutionResult = SuiClientTypes.TransactionResult<{
+  effects: true
+  objectTypes: true
+}>
+
+/**
+ * Map a core-API (gRPC) execution result onto {@link SuiTxResult}: created/mutated objects
+ * come from `effects.changedObjects` (types from the `objectTypes` map), and a newly written
+ * package becomes the `published` entry. Failed transactions are returned with a failure
+ * status (not thrown) so {@link deployToken}'s `assertSuccess` reports them uniformly.
+ */
+export function toSuiTxResult(res: CoreExecutionResult): SuiTxResult {
+  const tx = res.Transaction ?? res.FailedTransaction
+  const types = tx.objectTypes ?? {}
+  const objectChanges: NonNullable<SuiTxResult['objectChanges']> = []
+  for (const c of tx.effects?.changedObjects ?? []) {
+    if (c.outputState === 'PackageWrite') {
+      if (c.idOperation === 'Created') objectChanges.push({ type: 'published', packageId: c.objectId })
+    } else if (c.outputState === 'ObjectWrite') {
+      objectChanges.push({
+        type: c.idOperation === 'Created' ? 'created' : 'mutated',
+        objectId: c.objectId,
+        objectType: types[c.objectId],
+        version: c.outputVersion ?? undefined,
+        digest: c.outputDigest ?? undefined,
+      })
+    }
+  }
+  const status = tx.status.success
+    ? { status: 'success' }
+    : { status: 'failure', error: tx.status.error.message }
+  return { digest: tx.digest, objectChanges, effects: { status } }
 }
 
 export interface Executor {

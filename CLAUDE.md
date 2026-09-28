@@ -27,11 +27,18 @@ The pattern mirrors `@meddleware/walrus-ui`, `@meddleware/seal-ui`, and
 must **not** render its own wallet bar, header, or footer when embedded.
 
 **Deploy executor note:** The wallet-adapter `Executor` only returns `{ digest }` — insufficient
-for the deploy flow, which requires `objectChanges` to extract the packageId, coin type,
-TreasuryCap, and MetadataCap. `src/lib/deployExecutor.ts` uses the wallet-adapter singleton for
-wallet connection state, but builds its own `SuiJsonRpcClient` (`@mysten/sui/jsonRpc`) to execute
-with `showEffects + showObjectChanges`. This is intentional — do not replace it with the
-wallet-adapter `buildExecutor`.
+for the deploy flow, which requires the created objects to extract the packageId, coin type,
+TreasuryCap, MetadataCap and the Currency ref. `src/lib/deployExecutor.ts` uses the wallet-adapter
+singleton for wallet connection state, but executes through the app's own `SuiGrpcClient`
+(`getReadClient`) with `include: { effects, objectTypes }`, and `toSuiTxResult` (`src/lib/deploy.ts`)
+maps `effects.changedObjects` onto the `objectChanges` shape `extractPublishResult` reads. This is
+intentional — do not replace it with the wallet-adapter `buildExecutor`.
+
+**gRPC only.** Public fullnodes have deprecated JSON-RPC; every chain call (app and `scripts/`)
+goes through `SuiGrpcClient`, and `VITE_RPC_*` / `E2E_RPC` must be gRPC(-web) endpoints. Do not
+reintroduce `@mysten/sui/jsonRpc`. gRPC may render framework addresses in long form
+(`0x000…02::coin::…`) — match types tolerantly. E2E builds (`VITE_E2E=1`) inject a stub client via
+`setReadClient` because gRPC-web responses cannot be faked at the `fetch` layer.
 
 ## Architecture (the money/parity paths matter most)
 
@@ -105,7 +112,7 @@ the relay source `crates/walrus-upload-relay`.)
 - **NFT / usage-ticket per-wallet gating is IMPLEMENTED (2026-08-05)** via the standalone
   `nft-gate` project: an `nft-gate` gateway fronts the operator relay and admits only
   holders of an `access_gate` NFT. The app gates the operator-relay option on ownership
-  (`useAccessGate` → `getOwnedObjects`), offers a permissionless purchase CTA, and attaches
+  (`useAccessGate` → `listOwnedObjects`), offers a permissionless purchase CTA, and attaches
   a wallet-signed access proof (`sui:signPersonalMessage` → `uploadRelayAuthToken`) when the
   operator relay is used. Unset `VITE_ACCESS_GATE_*` → no gating (unchanged behaviour). The
   tip and the NFT are **independent levers** (tip = per-upload cost; NFT = access/abuse).

@@ -17,27 +17,21 @@ const gate: AccessGateConfig = {
 
 function ownedEntry(uses?: number) {
   return {
-    data: {
-      objectId: '0xnft',
-      content: {
-        fields: {
-          data: {
-            fields: {
-              gate_id: GATE,
-              variant:
-                uses === undefined
-                  ? { variant: 'UnlimitedPass', fields: {} }
-                  : { variant: 'SingleUse', fields: { uses_remaining: String(uses) } },
-            },
-          },
-        },
+    objectId: '0xnft',
+    json: {
+      data: {
+        gate_id: GATE,
+        variant:
+          uses === undefined
+            ? { variant: 'UnlimitedPass', fields: {} }
+            : { variant: 'SingleUse', fields: { uses_remaining: String(uses) } },
       },
     },
   }
 }
 
-function clientReturning(data: unknown[]): OwnedObjectsClient {
-  return { getOwnedObjects: vi.fn(async () => ({ data })) }
+function clientReturning(objects: unknown[]): OwnedObjectsClient {
+  return { core: { listOwnedObjects: vi.fn(async () => ({ objects })) } }
 }
 
 describe('useAccessGate', () => {
@@ -68,9 +62,11 @@ describe('useAccessGate', () => {
   it('surfaces an error and denies (does not throw) when the query fails', async () => {
     const g = useAccessGate('testnet', {
       getClient: () => ({
-        getOwnedObjects: vi.fn(async () => {
-          throw new Error('rpc down')
-        }),
+        core: {
+          listOwnedObjects: vi.fn(async () => {
+            throw new Error('rpc down')
+          }),
+        },
       }),
       gate,
     })
