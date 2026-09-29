@@ -1,0 +1,9 @@
+# Build context: sources only. Local installs, build output and e2e-only env files never enter
+# the image build (the image runs its own `npm ci` and production build).
+node_modules
+dist
+.git
+.env.e2e
+.env*.local
+test-results
+playwright-report

@@ -28,9 +28,10 @@ configureWasm(wasmUrl)
 
 // E2E-only: stub the Sui client, register a mock wallet and expose getSuiClient for headless tests.
 // Wrapped in async IIFE to ensure wallet is registered BEFORE app mounts (timing critical).
-// Tree-shaking removes this entire block from production when VITE_E2E !== '1'.
+// Only the `e2e` build mode may set VITE_E2E (vite.config.ts refuses otherwise); both are static,
+// so every other build tree-shakes this entire block (verified by `npm run check:bundle`).
 ;(async () => {
-  if (import.meta.env.VITE_E2E === '1') {
+  if (import.meta.env.MODE === 'e2e' && import.meta.env.VITE_E2E === '1') {
     const { getWallets } = await import('@mysten/wallet-standard')
 
     // Stub gRPC client in place of the network (gRPC-web is binary, so it cannot be faked

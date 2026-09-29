@@ -41,3 +41,6 @@ jobs:
 
       - name: Build (dev — treasury guard bypassed for CI)
         run: VITE_ALLOW_UNSET_TREASURY=1 npm run build
+
+      - name: Check the bundle carries no e2e harness
+        run: npm run check:bundle

@@ -10,11 +10,11 @@ const REQUIRED_TREASURY_NETWORKS = ['TESTNET', 'MAINNET'] as const
 
 /**
  * Fail a production build when a selectable network's fee treasury is still the
- * zero address, so revenue can never silently burn to 0x0. Bypass for dev/e2e
- * builds with VITE_ALLOW_UNSET_TREASURY=1 (or VITE_E2E=1).
+ * zero address, so revenue can never silently burn to 0x0. The only bypass is
+ * VITE_ALLOW_UNSET_TREASURY=1 (dev/CI builds); the e2e mode never reaches this check.
  */
 function assertTreasuryConfigured(env: Record<string, string>): void {
-  if (env.VITE_ALLOW_UNSET_TREASURY === '1' || env.VITE_E2E === '1') return
+  if (env.VITE_ALLOW_UNSET_TREASURY === '1') return
   const unset = REQUIRED_TREASURY_NETWORKS.filter((n) => {
     const v = env[`VITE_FEE_TREASURY_${n}`]
     return !v || v === ZERO_ADDR
@@ -33,8 +33,23 @@ function assertTreasuryConfigured(env: Record<string, string>): void {
 /** Public origin used for the canonical URL + Open Graph tags (`%VITE_PUBLIC_URL%` in index.html). */
 const DEFAULT_PUBLIC_URL = 'https://sui-token-deployer.meddleware.co.uk'
 
+/**
+ * VITE_E2E=1 compiles in a mock wallet, a stubbed Sui client and `window.__*` test hooks. It is
+ * only allowed in the dedicated `e2e` mode (`npm run build:e2e`), so no production, development
+ * or Docker build can carry it — whichever env source (shell, .env file, build arg) set it.
+ */
+function assertE2eOnlyInE2eMode(env: Record<string, string>, mode: string): void {
+  if (env.VITE_E2E === '1' && mode !== 'e2e') {
+    throw new Error(
+      `Refusing to run: VITE_E2E=1 is only allowed with --mode e2e (got mode "${mode}"). ` +
+        `Use \`npm run build:e2e\` for the mocked e2e bundle.`,
+    )
+  }
+}
+
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
+  assertE2eOnlyInE2eMode(env, mode)
   if (command === 'build' && mode === 'production') assertTreasuryConfigured(env)
   // Every mode (dev, e2e, production) resolves the placeholder; a white-label deployment overrides it
   // with VITE_PUBLIC_URL (Docker build arg / CI var / .env file).

@@ -103,7 +103,7 @@ export async function deployToken(args: DeployArgs): Promise<PublishResult> {
   const structName = deriveStructName(config.moduleName)
   const normalizedConfig: TokenConfig = { ...config, structName }
   const recipient = normalizedConfig.recipient || args.sender
-  const isE2e = import.meta.env.VITE_E2E === '1'
+  const isE2e = import.meta.env.MODE === 'e2e' && import.meta.env.VITE_E2E === '1'
 
   onStep?.('patching')
   const moduleBytes = await patchTemplateModule({

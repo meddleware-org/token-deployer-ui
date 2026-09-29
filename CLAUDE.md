@@ -37,8 +37,9 @@ intentional — do not replace it with the wallet-adapter `buildExecutor`.
 **gRPC only.** Public fullnodes have deprecated JSON-RPC; every chain call (app and `scripts/`)
 goes through `SuiGrpcClient`, and `VITE_RPC_*` / `E2E_RPC` must be gRPC(-web) endpoints. Do not
 reintroduce `@mysten/sui/jsonRpc`. gRPC may render framework addresses in long form
-(`0x000…02::coin::…`) — match types tolerantly. E2E builds (`VITE_E2E=1`) inject a stub client via
-`setReadClient` because gRPC-web responses cannot be faked at the `fetch` layer.
+(`0x000…02::coin::…`) — match types tolerantly. E2E builds (`npm run build:e2e`: `--mode e2e` +
+`VITE_E2E=1`) inject a stub client via `setReadClient` because gRPC-web responses cannot be faked at
+the `fetch` layer.
 
 ## Architecture (the money/parity paths matter most)
 
@@ -142,12 +143,26 @@ Three distinct categories — do not collapse them (repo convention):
 - **Pure unit (Vitest, `npm test`):** validation, licenses, github, template patch, PTB
   builders, generatePackage, deploy orchestration, provenance/parity.
 - **Mocked-RPC UI e2e (Playwright, `npm run test:e2e`):** wallet/form/publish flow against the
-  `VITE_E2E` fetch mock + mock wallet in [src/main.ts](src/main.ts) (tree-shaken from prod). Specs
-  live in `e2e/` (`playwright.config.ts` builds with `VITE_E2E=1` + previews). **Migrated from Cypress
-  2026-08-07** (Cypress dropped — it exits SIGILL in the sandbox; Playwright is the one browser-e2e
-  tool now, shared with the real-chain harness). Run `npm run e2e:install` once, then `npm run test:e2e`.
-  Cannot reach real confirmation, the result panel, or the source download — those need a real chain
-  (see below). This is the automatic gate alongside `npm test`.
+  stub Sui client + mock wallet in [src/main.ts](src/main.ts). Specs belong in `e2e/`, which is
+  **not in this repo yet** (the suite did not come across with the repo split — `test:e2e` currently
+  reports "No tests found"); `playwright.config.ts` runs `npm run build:e2e` (`VITE_E2E=1 vite build --mode e2e`) and previews
+  it. **Migrated from Cypress 2026-08-07** (Cypress dropped — it exits SIGILL in the sandbox;
+  Playwright is the one browser-e2e tool now, shared with the real-chain harness). Run
+  `npm run e2e:install` once, then `npm run test:e2e`. Cannot reach real confirmation, the result
+  panel, or the source download — those need a real chain (see below). Not run by `node-ci.yml`.
+- **E2E harness isolation (build-time, enforced):**
+  - The harness (mock wallet, stub client, `window.__registerMockWallet` / `__unregisterMockWallet`
+    / `__getSuiClient` / `__e2eAddress`, the fabricated `E2E…` publish digest) is compiled only when
+    `import.meta.env.MODE === 'e2e' && VITE_E2E === '1'`; every other build tree-shakes it.
+  - `vite.config.ts` throws if `VITE_E2E=1` in any mode other than `e2e` — dev, production and
+    Docker builds included, whatever env source set it.
+  - The treasury-guard bypass is `VITE_ALLOW_UNSET_TREASURY=1` only (dev/CI builds); `VITE_E2E` no
+    longer bypasses it, and the `e2e` mode never runs the guard. Never set the bypass for an image
+    or a deploy — the Dockerfile has no such build arg.
+  - `npm run check:bundle` ([scripts/check-prod-bundle.mjs](scripts/check-prod-bundle.mjs)) fails if
+    `dist/` contains any harness marker. It runs after the production build in `node-ci.yml` and in
+    the Dockerfile, so a leaked harness fails CI and the image build. The Dockerfile declares no
+    `VITE_E2E` arg and `.dockerignore` keeps `.env.e2e` / `.env*.local` out of the context.
 - **Real-chain deploy e2e (Playwright, NOT in `npm test`):** `scripts/e2e-deploy.mjs` — the
   single network-parametrized harness (`E2E_NETWORK=localnet|testnet|mainnet`) driven by
   `npm run e2e:localnet|e2e:testnet|e2e:mainnet`. Injects a wallet-standard wallet backed by a
@@ -156,9 +171,9 @@ Three distinct categories — do not collapse them (repo convention):
   (physical chain) vs the app network (testnet/mainnet UI mode; localnet borrows testnet mode with
   the RPC pointed at the local node). Mainnet is fail-safe: aborts unless `E2E_MAINNET_CONFIRM=1`.
   `scripts/e2e-browser.mjs` is a thin `E2E_NETWORK=localnet` wrapper; `scripts/e2e-walrus-browser.mjs`
-  (testnet icon upload) uses the E2E-only `window.__getSuiClient` hook in `src/main.ts`. Testnet/
-  mainnet are **manual only** — never in automatic CI (see the README launch runbook). The
-  `.github/workflows/token-deployer-e2e.yml` `workflow_dispatch` job is the gated manual runner.
+  (testnet icon upload) uses the `window.__getSuiClient` hook, which exists only in the `e2e` build.
+  Testnet/mainnet are **manual only** — never in automatic CI (see the README launch runbook). The
+  `.github/workflows/e2e-realchain.yml` `workflow_dispatch` job is the gated manual runner.
 
 ## Docs
 

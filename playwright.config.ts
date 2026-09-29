@@ -1,9 +1,9 @@
 import { defineConfig, devices } from '@playwright/test'
 
 // Mocked-RPC UI e2e. Standardised on Playwright (robust; replaces the former
-// Cypress mocked suite, which exits SIGILL in the sandbox). The app is built with
-// VITE_E2E=1 so main.ts registers the mock wallet + fetch mock (tree-shaken from
-// prod). Real-chain e2e stays in scripts/e2e-deploy.mjs (npm run e2e:localnet…).
+// Cypress mocked suite, which exits SIGILL in the sandbox). The app is built in the
+// `e2e` mode with VITE_E2E=1 (`npm run build:e2e`) so main.ts registers the mock
+// wallet + stub client; vite.config.ts refuses VITE_E2E in any other mode. Real-chain e2e stays in scripts/e2e-deploy.mjs (npm run e2e:localnet…).
 const PORT = 4173
 
 export default defineConfig({

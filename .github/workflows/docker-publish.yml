@@ -60,6 +60,9 @@ jobs:
             docker.io/${{ vars.DOCKERHUB_NAMESPACE }}/${{ env.IMAGE }}:${{ github.sha }}-amd64
           cache-from: type=gha,scope=amd64-public
           cache-to: type=gha,scope=amd64-public,mode=max
+          # Production values only. Never add VITE_E2E / VITE_ALLOW_UNSET_TREASURY: the Dockerfile
+          # declares neither, vite.config.ts refuses VITE_E2E outside --mode e2e, and the image build
+          # runs `npm run check:bundle`.
           build-args: |
             VITE_NETWORK=${{ vars.VITE_NETWORK || 'testnet' }}
             VITE_FEE_TREASURY_TESTNET=${{ vars.VITE_FEE_TREASURY_TESTNET }}
@@ -113,6 +116,9 @@ jobs:
             docker.io/${{ vars.DOCKERHUB_NAMESPACE }}/${{ env.IMAGE }}:${{ github.sha }}-arm64
           cache-from: type=gha,scope=arm64-public
           cache-to: type=gha,scope=arm64-public,mode=max
+          # Production values only. Never add VITE_E2E / VITE_ALLOW_UNSET_TREASURY: the Dockerfile
+          # declares neither, vite.config.ts refuses VITE_E2E outside --mode e2e, and the image build
+          # runs `npm run check:bundle`.
           build-args: |
             VITE_NETWORK=${{ vars.VITE_NETWORK || 'testnet' }}
             VITE_FEE_TREASURY_TESTNET=${{ vars.VITE_FEE_TREASURY_TESTNET }}
@@ -255,6 +261,9 @@ jobs:
           tags: ${{ vars.PRIVATE_REGISTRY }}/${{ vars.PRIVATE_NAMESPACE }}/${{ env.IMAGE }}:${{ github.sha }}-amd64
           cache-from: type=gha,scope=amd64-private
           cache-to: type=gha,scope=amd64-private,mode=max
+          # Production values only. Never add VITE_E2E / VITE_ALLOW_UNSET_TREASURY: the Dockerfile
+          # declares neither, vite.config.ts refuses VITE_E2E outside --mode e2e, and the image build
+          # runs `npm run check:bundle`.
           build-args: |
             VITE_NETWORK=${{ vars.VITE_NETWORK || 'testnet' }}
             VITE_FEE_TREASURY_TESTNET=${{ vars.VITE_FEE_TREASURY_TESTNET }}
@@ -294,6 +303,9 @@ jobs:
           tags: ${{ vars.PRIVATE_REGISTRY }}/${{ vars.PRIVATE_NAMESPACE }}/${{ env.IMAGE }}:${{ github.sha }}-arm64
           cache-from: type=gha,scope=arm64-private
           cache-to: type=gha,scope=arm64-private,mode=max
+          # Production values only. Never add VITE_E2E / VITE_ALLOW_UNSET_TREASURY: the Dockerfile
+          # declares neither, vite.config.ts refuses VITE_E2E outside --mode e2e, and the image build
+          # runs `npm run check:bundle`.
           build-args: |
             VITE_NETWORK=${{ vars.VITE_NETWORK || 'testnet' }}
             VITE_FEE_TREASURY_TESTNET=${{ vars.VITE_FEE_TREASURY_TESTNET }}

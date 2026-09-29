@@ -79,7 +79,9 @@ ENV VITE_NETWORK=${VITE_NETWORK} \
     VITE_WALRUS_MAX_TIP_MIST=${VITE_WALRUS_MAX_TIP_MIST} \
     VITE_PUBLIC_URL=${VITE_PUBLIC_URL}
 
-RUN npm run build
+# No VITE_E2E build arg exists, and vite.config.ts refuses VITE_E2E=1 outside `--mode e2e` (so a
+# stray .env file cannot enable it either); the bundle check is the last line of defence.
+RUN npm run build && npm run check:bundle
 
 # ── runtime stage ─────────────────────────────────────────────────────────────
 # static-server is a minimal Go binary image — no shell, no package manager.
