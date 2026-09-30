@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import type { TokenConfig, Network } from '../lib/types.js'
-import { FEE_MIST } from '../config.js'
+import { FEE_MIST, FEE_TREASURY, isFeeConfigured } from '../config.js'
 import { UiNotice } from '@meddleware/ui'
 
 const props = defineProps<{ config: TokenConfig; network: Network }>()
 defineEmits<{ (e: 'back'): void; (e: 'confirm'): void }>()
 
+// Mirrors TokenDeployerView: the fee is only charged when a real treasury is configured.
+const feeCharged = isFeeConfigured(props.network)
 const feeSui = Number(FEE_MIST) / 1e9
+const treasury = FEE_TREASURY[props.network]
 </script>
 
 <template>
@@ -51,8 +54,13 @@ const feeSui = Number(FEE_MIST) / 1e9
     </dl>
 
     <p v-once class="hint">
-      Your wallet signs and pays gas. A one-off fee of <strong>{{ feeSui }} SUI</strong> is included
-      in the publish transaction. Nothing is compiled or signed on a server.
+      Your wallet signs and pays gas.
+      <template v-if="feeCharged">
+        A one-off fee of <strong>{{ feeSui }} SUI</strong> is included in the publish transaction,
+        paid to the operator treasury <span class="mono">{{ treasury }}</span>.
+      </template>
+      <template v-else>No operator fee is charged on this network.</template>
+      Nothing is compiled or signed on a server.
     </p>
 
     <p v-once class="hint">

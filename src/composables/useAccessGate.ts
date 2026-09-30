@@ -78,8 +78,13 @@ export function useAccessGate(
     if (!gate) throw new Error('No access gate configured for this network.')
     const tx = buildPurchaseTx(gate)
     const res = await executor.signAndExecute(tx)
-    if (res.digest) await executor.waitForTransaction(res.digest).catch(() => {})
-    await checkOwnership(address)
+    try {
+      // Wait for finality before re-reading ownership; a wait failure is surfaced to the caller
+      // (the purchase may still have landed, so ownership is re-checked either way).
+      if (res.digest) await executor.waitForTransaction(res.digest)
+    } finally {
+      await checkOwnership(address)
+    }
   }
 
   /** Build the consume PTB for a single-use NFT (woven into the upload flow before proving). */

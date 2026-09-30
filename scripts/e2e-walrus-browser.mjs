@@ -1,94 +1,94 @@
-// Headless browser verification of the Walrus icon-upload widget on TESTNET.
-// Injects a wallet-standard wallet backed by the FUNDED keypair (SUI_PRIV env),
-// drives the widget's file upload, and asserts the icon field is filled with a
-// working aggregator URL that serves the exact uploaded image.
+// Headless-browser verification of the Walrus icon-upload widget on TESTNET (manual only — it
+// spends real SUI + WAL). Injects a wallet-standard wallet backed by the funded keypair
+// (SUI_PRIV), drives the widget's upload, and asserts the icon field is filled with an aggregator
+// URL that serves the exact uploaded image.
 //
-// Prereq: build the app + serve on APP_URL, and export SUI_PRIV for the funded
-// testnet address (with SUI + WAL).
+//   E2E_RELAY=public    (default) the free public relay — register → upload → certify.
+//   E2E_RELAY=operator  the NFT-gated operator relay — buys an access pass if the account has
+//                       none, then consume (single-use gates) + signed access proof → register →
+//                       upload → certify. Needs a build with VITE_ACCESS_GATE_*_TESTNET and
+//                       VITE_WALRUS_RELAY_TESTNET set (e.g. in a local .env.production).
+//
+// Run via `npm run e2e:walrus` (builds, serves dist on APP_URL, runs this). Requires SUI_PRIV
+// (bech32 suiprivkey1…) for an address holding testnet SUI and WAL.
 
-import { readFileSync } from 'node:fs'
-import { chromium } from 'playwright'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { SuiGrpcClient } from '@mysten/sui/grpc'
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519'
-import { toBase64 } from '@mysten/sui/utils'
+import { launchBrowser, injectWallet, connectWallet } from './e2e-wallet.mjs'
 
 const APP_URL = process.env.APP_URL || 'http://localhost:4173'
-const ICON = '/tmp/test-icon.svg'
-
-const keypair = Ed25519Keypair.fromSecretKey(process.env.SUI_PRIV)
-const address = keypair.toSuiAddress()
+const RPC = process.env.E2E_RPC || 'https://fullnode.testnet.sui.io:443'
+const RELAY = process.env.E2E_RELAY || 'public'
+const UPLOAD_TIMEOUT = Number(process.env.E2E_UPLOAD_TIMEOUT || '180000')
 
 function fail(m) {
   console.error('WALRUS BROWSER E2E FAIL:', m)
   process.exit(1)
 }
 
+if (!['public', 'operator'].includes(RELAY)) fail(`E2E_RELAY must be public|operator (got "${RELAY}")`)
+if (!process.env.SUI_PRIV) fail('SUI_PRIV is required (a funded testnet key with SUI + WAL).')
+
+const keypair = Ed25519Keypair.fromSecretKey(process.env.SUI_PRIV)
+const address = keypair.toSuiAddress()
+const client = new SuiGrpcClient({ baseUrl: RPC, network: 'testnet' })
+
+/** A small, unique SVG so every run uploads (and verifies) fresh content. */
+function writeIcon() {
+  const svg =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">' +
+    `<rect width="64" height="64" fill="#177542"/><text x="4" y="36" font-size="8">${Date.now()}</text></svg>`
+  const path = join(mkdtempSync(join(tmpdir(), 'walrus-e2e-')), 'icon.svg')
+  writeFileSync(path, svg)
+  return path
+}
+
 async function main() {
-  console.log('signer:', address)
-  const browser = await chromium.launch({
-    headless: true,
-    executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome',
-    // Bypass CORS so the in-browser tx.build() can hit the testnet gRPC endpoint.
-    args: ['--disable-web-security', '--disable-features=IsolateOrigins,site-per-process'],
-  })
+  const { balance } = await client.getBalance({ owner: address })
+  console.log('signer:', address, 'SUI balance:', balance.balance, 'MIST', 'relay:', RELAY)
+  if (BigInt(balance.balance) === 0n) fail(`${address} has no testnet SUI`)
+
+  const icon = writeIcon()
+  const browser = await launchBrowser()
   const page = await browser.newPage()
   page.on('pageerror', (e) => console.log('[pageerror]', e.message))
 
-  // Node just signs raw bytes; the browser builds the tx (resolving CoinWithBalance).
-  await page.exposeFunction('__mockSignBytes', async (byteArr) => {
-    const bytes = new Uint8Array(byteArr)
-    const { signature } = await keypair.signTransaction(bytes)
-    return { bytes: toBase64(bytes), signature }
-  })
-
-  await page.addInitScript(
-    ({ address, pubkey }) => {
-      const account = { address, publicKey: new Uint8Array(pubkey), chains: ['sui:testnet'], features: ['sui:signTransaction'], label: 'Mock' }
-      const wallet = {
-        version: '1.0.0', name: 'Mock Test Wallet',
-        icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciLz4=',
-        chains: ['sui:testnet'], accounts: [account],
-        features: {
-          'standard:connect': { version: '1.0.0', connect: async () => ({ accounts: [account] }) },
-          'standard:events': { version: '1.0.0', on: () => () => {} },
-          'sui:signTransaction': {
-            version: '2.0.0',
-            signTransaction: async (input) => {
-              // A real wallet sets the sender from the connected account; do the same.
-              const client = window.__getSuiClient('testnet')
-              input.transaction.setSenderIfNotSet(input.account.address)
-              const bytes = await input.transaction.build({ client })
-              return window.__mockSignBytes(Array.from(bytes))
-            },
-          },
-        },
-      }
-      const cb = ({ register }) => register(wallet)
-      window.dispatchEvent(new CustomEvent('wallet-standard:register-wallet', { detail: cb }))
-      window.addEventListener('wallet-standard:app-ready', (e) => cb(e.detail))
-    },
-    { address, pubkey: Array.from(keypair.getPublicKey().toRawBytes()) },
-  )
-
+  await injectWallet(page, { keypair, client, chain: 'sui:testnet' })
   await page.goto(APP_URL, { waitUntil: 'networkidle' })
-  await page.getByRole('button', { name: /Connect Mock Test Wallet/ }).click()
-  await page.getByText(/Mock Test Wallet ·/).waitFor({ timeout: 10000 })
+  await connectWallet(page, 'testnet')
   console.log('wallet connected')
 
-  // Drive the widget: choose the file + click upload.
-  await page.locator('#walrus-file').setInputFiles(ICON)
-  await page.getByRole('button', { name: /Upload to Walrus/ }).click()
-  console.log('uploading to Walrus (2 wallet approvals, relay)…')
+  await page.getByRole('radio', { name: 'Upload to Walrus' }).check()
+  await page.locator('#walrus-file').setInputFiles(icon)
 
-  // Wait for the icon field to be populated with an aggregator URL.
-  // (arg must precede options in waitForFunction.)
+  const relayChoice = page.locator('fieldset.relay-choice')
+  if (RELAY === 'operator') {
+    if (!(await relayChoice.isVisible())) fail('no operator relay in this build (VITE_WALRUS_RELAY_TESTNET unset?)')
+    await relayChoice.getByRole('radio', { name: /Operator relay/ }).check()
+    const purchase = page.getByRole('button', { name: 'Purchase relay access' })
+    if (await purchase.isVisible()) {
+      console.log('no access pass — purchasing one (1 wallet approval)…')
+      await purchase.click()
+      await purchase.waitFor({ state: 'detached', timeout: 60000 })
+    }
+  } else if (await relayChoice.isVisible()) {
+    await relayChoice.getByRole('radio', { name: /Public relay/ }).check()
+  }
+
+  await page.getByRole('button', { name: /Upload to Walrus/ }).click()
+  console.log(`uploading via the ${RELAY} relay…`)
+
   try {
     await page.waitForFunction(
       () => (document.querySelector('#icon') ?? {}).value?.includes('/v1/blobs/'),
       undefined,
-      { timeout: 180000, polling: 1000 },
+      { timeout: UPLOAD_TIMEOUT, polling: 1000 },
     )
   } catch (e) {
-    const status = await page.locator('.hint[aria-live]').allInnerTexts().catch(() => [])
+    const status = await page.locator('#walrus-help').allInnerTexts().catch(() => [])
     const err = await page.locator('.field-error').allInnerTexts().catch(() => [])
     console.log('widget status:', JSON.stringify(status))
     console.log('widget errors:', JSON.stringify(err))
@@ -98,15 +98,15 @@ async function main() {
   console.log('icon URL:', url)
   await browser.close()
 
-  if (!url.includes('aggregator.walrus-testnet') || !url.includes('/v1/blobs/')) fail(`unexpected URL: ${url}`)
+  if (!url.includes('/v1/blobs/')) fail(`unexpected URL: ${url}`)
   const res = await fetch(url)
   const body = new Uint8Array(await res.arrayBuffer())
-  const expected = new Uint8Array(readFileSync(ICON))
+  const expected = new Uint8Array(readFileSync(icon))
   const match = body.length === expected.length && body.every((b, i) => b === expected[i])
   console.log('aggregator serves', body.length, 'bytes, matches uploaded image:', match)
   if (!match) fail('aggregator content does not match uploaded image')
 
-  console.log('\nWALRUS BROWSER E2E PASS ✓ (widget upload -> renderable icon URL on testnet)')
+  console.log(`\nWALRUS BROWSER E2E PASS ✓ (${RELAY} relay upload → renderable icon URL on testnet)`)
 }
 
 main().catch((e) => fail(e.message))

@@ -8,7 +8,7 @@ import './component-styles.css'
 import { configureWasm } from './lib/template.js'
 // Static: readClient is already in the main chunk (IconPicker, WalrusBlobBrowser and listMyTokens
 // import it), so a dynamic import in the E2E block below could not split it out anyway.
-import { getReadClient, setReadClient } from './lib/readClient.js'
+import { setReadClient } from './lib/readClient.js'
 import type { SuiGrpcClient } from '@mysten/sui/grpc'
 import { useColorMode, useSeason } from '@meddleware/ui'
 
@@ -138,9 +138,6 @@ configureWasm(wasmUrl)
       unregister?.()
       unregister = undefined
     }
-
-    // Expose getSuiClient for tests to build transactions
-    w.__getSuiClient = getReadClient
   }
 
   createApp(App).mount('#app')

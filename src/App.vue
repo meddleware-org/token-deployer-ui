@@ -8,7 +8,7 @@ const { mode: colorMode, set: setColorMode } = useColorMode('system')
 
 <template>
   <a class="skip-link" href="#main-content">Skip to main content</a>
-  <main id="main-content">
+  <main id="main-content" class="mw-token-deployer">
     <header class="page-header">
       <ColorModeControl
         class="theme-toggle"

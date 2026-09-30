@@ -14,6 +14,7 @@ import { SuiGrpcClient } from '@mysten/sui/grpc'
 import { walrus, blobIdFromInt } from '@mysten/walrus'
 import type { ClientWithCoreApi } from '@mysten/sui/client'
 import { WALRUS_RELAY_HOSTS, WALRUS_MAX_TIP_MIST, WALRUS_RPC_URLS } from '../config.js'
+import { isSecureOrLocal } from './accessGate.js'
 
 export { ICON_EPOCHS } from './walrus-constants.js'
 
@@ -44,11 +45,12 @@ export interface CreateWalrusClientOptions {
    */
   uploadRelayMaxTipMist?: bigint
   /**
-   * Access-proof token for an NFT-gated operator relay (base64 JSON from the access gate).
-   * Sent as the relay `Authorization: Bearer` header; the `nft-gate` gateway verifies it
-   * before proxying to the relay. Omit for the public relay or an ungated operator relay.
+   * Access-proof token for an NFT-gated operator relay (base64 JSON from the access gate), or a
+   * provider called per request. Sent as `Authorization: Bearer` on requests to the relay origin
+   * ONLY; the `nft-gate` gateway verifies it before proxying to the relay. Omit for the public
+   * relay or an ungated operator relay.
    */
-  uploadRelayAuthToken?: string
+  uploadRelayAuthToken?: string | (() => string | undefined)
   /**
    * gRPC fullnode URL for the underlying `SuiGrpcClient`. Defaults to
    * {@link WALRUS_RPC_URLS} for the network (operator-overridable via `VITE_WALRUS_RPC_*`).
@@ -81,12 +83,44 @@ export function createWalrusClient(
       uploadRelay: {
         host,
         sendTip: { max: Number(maxTip) },
+        // The SDK's upload-relay options are only { host, fetch, timeout, onError }: an
+        // `Authorization` header must be injected through the `fetch` hook (a `headers` key is
+        // silently dropped, so a gated relay would never see the proof).
         ...(opts.uploadRelayAuthToken
-          ? { headers: { Authorization: `Bearer ${opts.uploadRelayAuthToken}` } }
+          ? { fetch: relayAuthFetch(host, opts.uploadRelayAuthToken) }
           : {}),
       },
     }),
   )
+}
+
+/**
+ * A `fetch` that adds `Authorization: Bearer <token>` to requests whose origin is the relay's
+ * origin, and to nothing else. The token (or provider) is resolved per request so a resumed flow
+ * can present a fresh proof. Refuses to send a token over anything but https.
+ *
+ * @param relayHost - The configured upload relay base URL.
+ * @param token - The access-proof token, or a provider returning it.
+ * @param baseFetch - The underlying fetch (defaults to `globalThis.fetch`).
+ */
+export function relayAuthFetch(
+  relayHost: string,
+  token: string | (() => string | undefined),
+  baseFetch: typeof fetch = (...args) => globalThis.fetch(...args),
+): (url: RequestInfo | URL, init?: RequestInit) => Promise<Response> {
+  const relayOrigin = new URL(relayHost).origin
+  return (url, init) => {
+    const href = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url
+    const target = new URL(href)
+    const value = typeof token === 'function' ? token() : token
+    if (!value || target.origin !== relayOrigin) return baseFetch(url, init)
+    if (!isSecureOrLocal(target)) {
+      throw new Error(`Refusing to send the relay access token over a non-https URL (${href})`)
+    }
+    const headers = new Headers(init?.headers)
+    headers.set('Authorization', `Bearer ${value}`)
+    return baseFetch(url, { ...init, headers })
+  }
 }
 
 /** Raw-blob write flow: encode -> register(tx) -> upload -> certify(tx) -> getBlob. */
@@ -129,11 +163,21 @@ export async function fetchOwnedWalrusBlobs(
   owner: string,
 ): Promise<OwnedBlob[]> {
   const blobType = await walrusClient.walrus.getBlobType()
-  const { objects } = await suiClient.core.listOwnedObjects({
-    owner,
-    type: blobType,
-    include: { json: true },
-  })
+  type OwnedPage = Awaited<ReturnType<typeof suiClient.core.listOwnedObjects>>
+  const objects: OwnedPage['objects'] = []
+  let cursor: string | null | undefined = undefined
+  // Page through every owned blob (a single page silently truncates large wallets).
+  for (;;) {
+    const page: OwnedPage = await suiClient.core.listOwnedObjects({
+      owner,
+      type: blobType,
+      include: { json: true },
+      ...(cursor ? { cursor } : {}),
+    })
+    objects.push(...page.objects)
+    if (!page.hasNextPage || !page.cursor) break
+    cursor = page.cursor
+  }
   const blobs: OwnedBlob[] = []
   for (const obj of objects) {
     const fields = structFields(obj.json)
@@ -148,7 +192,8 @@ export async function fetchOwnedWalrusBlobs(
         certified: fields.certified_epoch !== null && fields.certified_epoch !== undefined,
       })
     } catch {
-      // Skip blobs whose fields cannot be parsed.
+      // Deliberately skipped: a blob whose fields cannot be parsed is not listed (display only;
+      // nothing downstream depends on its absence).
     }
   }
   return blobs

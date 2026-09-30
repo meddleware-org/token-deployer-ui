@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { fetchLicenseList, fetchLicenseText, NO_LICENSE } from '../lib/licenses.js'
 import type { SpdxLicense } from '../lib/licenses.js'
-import { UiDialog, UiFieldHint, UiFormField, UiNotice, UiSelect } from '@meddleware/ui'
+import { UiDialog, UiFieldHint, UiFormField, UiNotice, UiSelect, safeHref } from '@meddleware/ui'
 
 const props = defineProps<{ modelValue: string }>()
 const emit = defineEmits<{
@@ -131,7 +131,7 @@ async function openLicenseModal(): Promise<void> {
     <template v-else>
       <p class="license-spdx">
         <a
-          :href="`https://spdx.org/licenses/${modelValue}.html`"
+          :href="safeHref(`https://spdx.org/licenses/${encodeURIComponent(modelValue)}.html`)"
           target="_blank"
           rel="noopener noreferrer"
           >View on SPDX ↗</a

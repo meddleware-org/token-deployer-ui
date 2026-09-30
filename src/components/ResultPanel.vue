@@ -5,7 +5,7 @@ import { explorerObjectUrl } from '../config.js'
 import { generatePackageZip } from '../lib/generatePackage.js'
 import { fetchLicenseText } from '../lib/licenses.js'
 import GithubPush from './GithubPush.vue'
-import { UiNotice } from '@meddleware/ui'
+import { UiNotice, safeHref } from '@meddleware/ui'
 
 const props = defineProps<{ result: PublishResult; config: TokenConfig }>()
 defineEmits<{ (e: 'restart'): void }>()
@@ -51,7 +51,7 @@ async function downloadPackage(): Promise<void> {
       <dd class="mono">{{ result.coinType }}</dd>
       <dt>Package</dt>
       <dd class="mono">
-        <a :href="packageUrl" target="_blank" rel="noopener noreferrer">
+        <a :href="safeHref(packageUrl)" target="_blank" rel="noopener noreferrer">
           {{ result.packageId }}
         </a>
       </dd>

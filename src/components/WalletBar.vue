@@ -3,6 +3,17 @@ import { computed, ref, watch } from 'vue'
 import { useWallet, useNetwork } from '@meddleware/wallet-adapter'
 import { SELECTABLE_NETWORKS } from '../config.js'
 import type { Network } from '../lib/types.js'
+
+/** Wallet-supplied icons are untrusted: render only inline images or https URLs. */
+function safeIcon(icon: string | undefined): string | undefined {
+  if (!icon) return undefined
+  if (/^data:image\/(png|svg\+xml|jpeg|webp|gif);/i.test(icon)) return icon
+  try {
+    return new URL(icon).protocol === 'https:' ? icon : undefined
+  } catch {
+    return undefined
+  }
+}
 import { UiDialog, UiFormField, UiNotice, UiSelect } from '@meddleware/ui'
 
 const { wallets, currentWallet, account, connecting, error, connect, disconnect } = useWallet()
@@ -66,7 +77,7 @@ watch(
     <menu class="wallet-list">
       <li v-for="w in wallets" :key="w.name">
         <button type="button" class="primary" :disabled="connecting" @click="connect(w)">
-          <img v-if="w.icon" :src="w.icon" alt="" width="20" height="20" />
+          <img v-if="safeIcon(w.icon)" :src="safeIcon(w.icon)" alt="" width="20" height="20" />
           {{ w.name }}
         </button>
       </li>

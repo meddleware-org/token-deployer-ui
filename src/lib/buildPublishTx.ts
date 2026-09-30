@@ -73,16 +73,6 @@ export interface BuildFinalizeArgs {
   gasBudget: bigint
 }
 
-/** Whether a finalize transaction is needed at all for this config. */
-export function needsFinalize(config: TokenConfig, sender: string): boolean {
-  return (
-    config.initialSupply > 0n ||
-    config.supplyPolicy === 'fixed' ||
-    config.metadataPolicy === 'frozen' ||
-    config.recipient.toLowerCase() !== sender.toLowerCase()
-  )
-}
-
 /**
  * Finalize PTB: register the coin in the registry, mint initial supply, apply
  * supply/metadata policy, and route caps to the recipient.

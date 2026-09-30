@@ -3,7 +3,7 @@
 // REAL publish against the target chain — then verifies coin type + operator fee on-chain.
 //
 // This is the single source of truth for the real-chain deploy path; `e2e-browser.mjs` is a
-// thin localnet wrapper over it. It covers exactly what the mocked Cypress suite cannot: real
+// thin localnet wrapper over it. It covers exactly what the mocked Playwright suite cannot: real
 // confirmation, the result panel, the source-zip download, and on-chain verification.
 //
 // Two axes matter and are DISTINCT:
@@ -17,13 +17,11 @@
 // The npm scripts (e2e:localnet / e2e:testnet / e2e:mainnet) build the app with the matching
 // VITE_RPC_* / VITE_FEE_TREASURY_* envs and serve dist on APP_URL before invoking this runner.
 
-import { readFileSync, existsSync } from 'node:fs'
-import { chromium } from 'playwright'
+import { readFileSync } from 'node:fs'
 import { SuiGrpcClient } from '@mysten/sui/grpc'
 import { requestSuiFromFaucetV2 } from '@mysten/sui/faucet'
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519'
-import { Transaction } from '@mysten/sui/transactions'
-import { toBase64 } from '@mysten/sui/utils'
+import { launchBrowser, injectWallet, connectWallet } from './e2e-wallet.mjs'
 
 const ZERO_ADDR = '0x' + '0'.repeat(64)
 
@@ -59,10 +57,11 @@ function fail(msg) {
 // ---------------------------------------------------------------------------
 if (NETWORK === 'mainnet' && process.env.E2E_MAINNET_CONFIRM !== '1') {
   console.log(
-    'e2e-deploy: mainnet run is gated. Set E2E_MAINNET_CONFIRM=1 to publish a REAL token on mainnet.\n' +
-      'Skipping (this is the expected, safe default).',
+    'e2e-deploy: SKIPPED — mainnet run is gated. Set E2E_MAINNET_CONFIRM=1 to publish a REAL token\n' +
+      'on mainnet. Exiting 78 so a skipped run is never mistaken for a pass.',
   )
-  process.exit(0)
+  // 78 (EX_CONFIG): distinguishable from success (0) and from a test failure (1).
+  process.exit(78)
 }
 
 // ---------------------------------------------------------------------------
@@ -112,70 +111,16 @@ async function main() {
 
   const feeBefore = EXPECT_FEE ? await suiBalance(FEE_ADDR) : 0n
 
-  // Browser resolution: explicit CHROME_PATH → a locally-installed Chrome → Playwright's
-  // bundled Chromium (CI installs it via `npx playwright install chromium`).
-  const chromePath =
-    process.env.CHROME_PATH ||
-    (existsSync('/usr/bin/google-chrome') ? '/usr/bin/google-chrome' : undefined)
-  const browser = await chromium.launch({ headless: true, executablePath: chromePath })
+  const browser = await launchBrowser()
   const page = await browser.newPage()
   page.on('console', (m) => m.type() === 'error' && console.log('[browser error]', m.text()))
   page.on('pageerror', (e) => console.log('[pageerror]', e.message))
 
-  // Node-side signer: build + sign the transaction the wallet forwards.
-  await page.exposeFunction('__mockSign', async (txJson) => {
-    const tx = Transaction.from(txJson)
-    const bytes = await tx.build({ client })
-    const { signature } = await keypair.signTransaction(bytes)
-    return { bytes: toBase64(bytes), signature }
-  })
-
-  // Inject a wallet-standard wallet before app scripts run. The account advertises the app
-  // network's chain so wallet-standard's required-feature/chain checks are satisfied.
-  await page.addInitScript(
-    ({ address, pubkey, chain }) => {
-      const account = {
-        address,
-        publicKey: new Uint8Array(pubkey),
-        chains: [chain],
-        features: ['sui:signTransaction'],
-        label: 'Mock',
-      }
-      const wallet = {
-        version: '1.0.0',
-        name: 'Mock Test Wallet',
-        icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciLz4=',
-        chains: [chain],
-        accounts: [account],
-        features: {
-          'standard:connect': { version: '1.0.0', connect: async () => ({ accounts: [account] }) },
-          'standard:events': { version: '1.0.0', on: () => () => {} },
-          'sui:signTransaction': {
-            version: '2.0.0',
-            signTransaction: async (input) => {
-              const txJson = await input.transaction.toJSON()
-              return await window.__mockSign(txJson)
-            },
-          },
-        },
-      }
-      const callback = ({ register }) => register(wallet)
-      window.dispatchEvent(new CustomEvent('wallet-standard:register-wallet', { detail: callback }))
-      window.addEventListener('wallet-standard:app-ready', (e) => callback(e.detail))
-    },
-    { address, pubkey: Array.from(keypair.getPublicKey().toRawBytes()), chain: `sui:${APP_NETWORK}` },
-  )
-
+  // The injected wallet advertises the app network's chain so wallet-standard's required
+  // feature/chain checks are satisfied; transactions are rebuilt + signed node-side.
+  await injectWallet(page, { keypair, client, chain: `sui:${APP_NETWORK}` })
   await page.goto(APP_URL, { waitUntil: 'networkidle' })
-
-  // Connect: open the dialog, select the app network if it differs from the testnet default,
-  // then pick the injected wallet.
-  await page.getByRole('button', { name: 'Connect Wallet', exact: true }).click()
-  if (APP_NETWORK !== 'testnet') {
-    await page.locator('#dialog-network-select').selectOption(APP_NETWORK)
-  }
-  await page.getByRole('button', { name: /Mock Test Wallet/ }).click()
-  await page.getByText(/Mock Test Wallet ·/).waitFor({ timeout: 10000 })
+  await connectWallet(page, APP_NETWORK)
   console.log('wallet connected in UI')
 
   // Fill the wizard: identity → token → settings (defaults) → terms (first run) → review.

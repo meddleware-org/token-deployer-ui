@@ -1,11 +1,12 @@
-# Cloudflare Pages headers. Security baseline; connect-src stays broad because
-# wallet extensions, Walrus relays, and per-network Sui RPCs vary.
+# Cloudflare Pages headers. Security baseline; connect-src stays broad (any https origin) because
+# Walrus relays, aggregators and per-network Sui RPCs vary; nothing here uses WebSockets.
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: DENY
   Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=()
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https: wss:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
 
 # Long-cache hashed build assets.
 /assets/*

@@ -79,6 +79,18 @@ describe('deployToken', () => {
       }),
     ).rejects.toThrow(/InsufficientGas/)
   })
+
+  it('treats a result without an effects status as a failure (never as success)', async () => {
+    const exec = mockExecutor({
+      signAndExecute: vi.fn<any>(async () => ({ digest: '0xD', objectChanges: [] })) as any,
+    })
+    await expect(
+      deployToken({
+        config: baseConfig(), network: 'testnet', sender, feeMist: 0n, feeTreasury: treasury,
+        gasBudget: 1n, executor: exec,
+      }),
+    ).rejects.toThrow(/no effects status returned/)
+  })
 })
 
 describe('toSuiTxResult (gRPC core execution → SuiTxResult)', () => {

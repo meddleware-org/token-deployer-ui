@@ -163,10 +163,11 @@ Two tests enforce this invariant in CI so it can never silently drift:
 - `scripts/e2e-deploy.mjs` — the **network-parametrized real-chain deploy e2e** (headless
   browser + injected wallet): drives the full UI, does a REAL publish, waits for real
   confirmation, checks the result panel, downloads the source zip, and verifies coin type +
-  operator fee on-chain. Covers exactly what the mocked Cypress suite cannot. `scripts/e2e-browser.mjs`
+  operator fee on-chain. Covers exactly what the mocked Playwright suite cannot. `scripts/e2e-browser.mjs`
   is a thin localnet wrapper over it.
-- `scripts/e2e-walrus-browser.mjs` — the Walrus icon uploader end-to-end on testnet
-  with an injected wallet.
+- `scripts/e2e-walrus-browser.mjs` (`npm run e2e:walrus`) — the Walrus icon uploader end-to-end on
+  testnet with an injected wallet (`SUI_PRIV` with SUI + WAL); `E2E_RELAY=operator` exercises the
+  NFT-gated relay (pass purchase, consume, signed proof). Manual only — it spends real funds.
 
 ## Real-chain e2e / launch runbook
 

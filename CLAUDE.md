@@ -52,8 +52,9 @@ the `fetch` layer.
 - **Two-phase publish** — TreasuryCap/MetadataCap are created in `init()` and sent
   to the sender, so they are NOT `tx.publish` results. Publish PTB
   ([src/lib/buildPublishTx.ts](src/lib/buildPublishTx.ts)) = publish + UpgradeCap
-  policy + fee split from gas. A finalize PTB (only when needed —
-  `needsFinalize`) mints supply and applies supply/metadata policies.
+  policy + fee split from gas. A finalize PTB **always** follows (it runs
+  `coin_registry::finalize_registration`, then mints supply and applies supply/metadata
+  policies).
 - **Orchestration** — [src/lib/deploy.ts](src/lib/deploy.ts) sequences patch →
   publish → wait → (finalize) via an injectable `Executor` (so it is unit-testable;
   the real one is built from the wallet in
@@ -90,7 +91,7 @@ Icons are RAW blobs (not quilts) so `GET /v1/blobs/<id>` renders the exact image
 an upload relay is required from browsers. `ICON_EPOCHS = 53` (Walrus's
 `max_epochs_ahead`; a larger single reservation aborts). Longer retention needs
 `extendBlobLifetime` (no keeper — operator step). Verified on testnet via
-`scripts/e2e-walrus-browser.mjs`.
+`npm run e2e:walrus` (`scripts/e2e-walrus-browser.mjs`).
 
 ## Walrus relay economics & deferred decisions
 
@@ -131,6 +132,17 @@ the relay source `crates/walrus-upload-relay`.)
   relay's tip exceeds this client ceiling ([config.ts](src/config.ts) documents it).
   Set it with generous headroom above the relay tip; raising the relay tip past it
   needs a frontend redeploy.
+- **Tip decisions (2026-09-29, see `docs/audit/LENS_GROUNDING_LOG.md` D1–D3 in the workspace).**
+  Relay tip stays linear `base 1_000_000 MIST + 10 MIST/encoded-KiB` on testnet and mainnet
+  (~0.0016–0.0062 SUI per upload). Every client ceiling is the same `50_000_000` MIST (0.05 SUI,
+  ~8× the worst case at the 100 MiB edge cap). The relay's tip-transaction freshness window is
+  one hour (Walrus default).
+- **Gated-relay proof delivery.** The `@mysten/walrus` upload-relay options are only
+  `{ host, fetch, timeout, onError }`; the access proof is injected through the `fetch` hook
+  (`relayAuthFetch`, relay origin only, https only). A `headers` option would be silently
+  dropped. The single-use consume digest is persisted
+  (`mw:token-deployer:consume:<network>:<gate>:<address>`) and reused until the gateway reports it
+  redeemed (`src/lib/consumeResume.ts`).
 - **Client-side icon size/type limits are UX only — NOT security.** The authoritative
   cap is a hard request-body limit at the edge (the relay otherwise buffers up to a
   hardcoded 1 GiB body into RAM *before* the tip check — the one real abuse vector:
@@ -143,16 +155,17 @@ Three distinct categories — do not collapse them (repo convention):
 - **Pure unit (Vitest, `npm test`):** validation, licenses, github, template patch, PTB
   builders, generatePackage, deploy orchestration, provenance/parity.
 - **Mocked-RPC UI e2e (Playwright, `npm run test:e2e`):** wallet/form/publish flow against the
-  stub Sui client + mock wallet in [src/main.ts](src/main.ts). Specs belong in `e2e/`, which is
-  **not in this repo yet** (the suite did not come across with the repo split — `test:e2e` currently
-  reports "No tests found"); `playwright.config.ts` runs `npm run build:e2e` (`VITE_E2E=1 vite build --mode e2e`) and previews
-  it. **Migrated from Cypress 2026-08-07** (Cypress dropped — it exits SIGILL in the sandbox;
-  Playwright is the one browser-e2e tool now, shared with the real-chain harness). Run
-  `npm run e2e:install` once, then `npm run test:e2e`. Cannot reach real confirmation, the result
-  panel, or the source download — those need a real chain (see below). Not run by `node-ci.yml`.
+  stub Sui client + mock wallet in [src/main.ts](src/main.ts). Specs live in
+  [e2e/app.spec.ts](e2e/app.spec.ts): connect/disconnect, no-wallet notice, network choice, identity
+  validation, and the full wizard to a mocked successful deploy — on chromium and firefox.
+  `playwright.config.ts` runs `npm run build:e2e` (`VITE_E2E=1 vite build --mode e2e`) and previews
+  it. Playwright is the one browser-e2e tool (Cypress dropped 2026-08-07 — SIGILL in the sandbox),
+  shared with the real-chain harness. Run `npm run e2e:install` once, then `npm run test:e2e`.
+  Cannot reach real confirmation or the source download — those need a real chain (see below).
+  Runs in `node-ci.yml` (`e2e` job).
 - **E2E harness isolation (build-time, enforced):**
   - The harness (mock wallet, stub client, `window.__registerMockWallet` / `__unregisterMockWallet`
-    / `__getSuiClient` / `__e2eAddress`, the fabricated `E2E…` publish digest) is compiled only when
+    / `__e2eAddress`, the fabricated `E2E…` publish digest) is compiled only when
     `import.meta.env.MODE === 'e2e' && VITE_E2E === '1'`; every other build tree-shakes it.
   - `vite.config.ts` throws if `VITE_E2E=1` in any mode other than `e2e` — dev, production and
     Docker builds included, whatever env source set it.
@@ -170,10 +183,15 @@ Three distinct categories — do not collapse them (repo convention):
   downloads the zip, and verifies coin type + fee on-chain. Two axes are distinct: `E2E_NETWORK`
   (physical chain) vs the app network (testnet/mainnet UI mode; localnet borrows testnet mode with
   the RPC pointed at the local node). Mainnet is fail-safe: aborts unless `E2E_MAINNET_CONFIRM=1`.
-  `scripts/e2e-browser.mjs` is a thin `E2E_NETWORK=localnet` wrapper; `scripts/e2e-walrus-browser.mjs`
-  (testnet icon upload) uses the `window.__getSuiClient` hook, which exists only in the `e2e` build.
-  Testnet/mainnet are **manual only** — never in automatic CI (see the README launch runbook). The
-  `.github/workflows/e2e-realchain.yml` `workflow_dispatch` job is the gated manual runner.
+  `scripts/e2e-browser.mjs` is a thin `E2E_NETWORK=localnet` wrapper. `scripts/e2e-walrus-browser.mjs`
+  (`npm run e2e:walrus`, testnet only) uploads a generated icon through the widget via the public
+  relay, or with `E2E_RELAY=operator` through the NFT-gated relay (buys a pass if needed, consume +
+  signed proof), and checks the aggregator serves the exact bytes. Both harnesses share
+  [scripts/e2e-wallet.mjs](scripts/e2e-wallet.mjs): the injected wallet forwards transaction JSON
+  and node rebuilds + signs it with its own client (plus `sui:signPersonalMessage`), so they run
+  against the ordinary production build with no app test hooks. Testnet/mainnet are **manual only** — never in automatic CI (see the README launch runbook). The
+  `.github/workflows/e2e-realchain.yml` (`workflow_dispatch`, `suite` = deploy or walrus, protected
+  `realchain` environment) is the gated manual runner; a skipped mainnet run exits 78.
 
 ## Docs
 

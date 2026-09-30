@@ -191,59 +191,61 @@ function restart(): void {
 </script>
 
 <template>
-  <UiToolIntro
-    >Deploy your own Sui coin — your wallet signs and pays; no intermediaries ({{
-      network
-    }}).</UiToolIntro
-  >
+  <div class="mw-token-deployer">
+    <UiToolIntro
+      >Deploy your own Sui coin — your wallet signs and pays; no intermediaries ({{
+        network
+      }}).</UiToolIntro
+    >
 
-  <AppTabNav
-    v-model="activeTab"
-    :tabs="TABS"
-    id-prefix="token-deployer"
-    aria-label="Sections"
-    class="deployer-tabs"
-  />
+    <AppTabNav
+      v-model="activeTab"
+      :tabs="TABS"
+      id-prefix="token-deployer"
+      aria-label="Sections"
+      class="deployer-tabs"
+    />
 
-  <!-- The tab list and its panel always render (the selected tab controls a live panel); the wallet
-       prompt replaces only the panel's content until a wallet is connected. -->
-  <UiTabPanel id-prefix="token-deployer" :tab="activeTab">
-    <WalletGuard message="Connect a Sui wallet to deploy your token.">
-      <template v-if="activeTab === 'deploy'">
-        <UiStepper :steps="STEPS" :model-value="stepIndex" @update:model-value="onStepperBack" />
-        <ConfigForm
-          v-if="step === 'identity' || step === 'token' || step === 'settings'"
-          :form="form"
-          :errors="errors"
-          :can-proceed="canProceed"
-          :network="network"
-          :connected="connected"
-          :form-step="formStep"
-          @next="goNext"
-          @back="goBack"
-        />
-        <ReviewPanel
-          v-if="step === 'review'"
-          :config="config"
-          :network="network"
-          @back="goBack"
-          @confirm="confirmDeploy"
-        />
-        <DeployProgress v-if="step === 'deploying'" :step="deployStep" />
-        <ResultPanel
-          v-if="step === 'done' && result"
-          :result="result"
-          :config="config"
-          @restart="restart"
-        />
-        <UiNotice v-if="deployError" type="error">{{ deployError }}</UiNotice>
-      </template>
+    <!-- The tab list and its panel always render (the selected tab controls a live panel); the wallet
+         prompt replaces only the panel's content until a wallet is connected. -->
+    <UiTabPanel id-prefix="token-deployer" :tab="activeTab">
+      <WalletGuard message="Connect a Sui wallet to deploy your token.">
+        <template v-if="activeTab === 'deploy'">
+          <UiStepper :steps="STEPS" :model-value="stepIndex" @update:model-value="onStepperBack" />
+          <ConfigForm
+            v-if="step === 'identity' || step === 'token' || step === 'settings'"
+            :form="form"
+            :errors="errors"
+            :can-proceed="canProceed"
+            :network="network"
+            :connected="connected"
+            :form-step="formStep"
+            @next="goNext"
+            @back="goBack"
+          />
+          <ReviewPanel
+            v-if="step === 'review'"
+            :config="config"
+            :network="network"
+            @back="goBack"
+            @confirm="confirmDeploy"
+          />
+          <DeployProgress v-if="step === 'deploying'" :step="deployStep" />
+          <ResultPanel
+            v-if="step === 'done' && result"
+            :result="result"
+            :config="config"
+            @restart="restart"
+          />
+          <UiNotice v-if="deployError" type="error">{{ deployError }}</UiNotice>
+        </template>
 
-      <MyTokens v-else :owner="account?.address ?? null" :network="network" />
-    </WalletGuard>
-  </UiTabPanel>
+        <MyTokens v-else :owner="account?.address ?? null" :network="network" />
+      </WalletGuard>
+    </UiTabPanel>
 
-  <TermsDialog :open="showTerms" @accept="onTermsAccept" @cancel="onTermsCancel" />
+    <TermsDialog :open="showTerms" @accept="onTermsAccept" @cancel="onTermsCancel" />
+  </div>
 </template>
 
 <style scoped>

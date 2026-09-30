@@ -124,9 +124,24 @@ export function personalMessageForNonce(nonce: string): Uint8Array {
   return new TextEncoder().encode(`nft-gate:access:${nonce}`)
 }
 
+/** UTF-8-safe base64 (byte-identical to `btoa` for ASCII, which is what the wire format carries). */
 function toBase64(s: string): string {
-  return typeof btoa === 'function' ? btoa(s) : Buffer.from(s, 'utf-8').toString('base64')
+  const bytes = new TextEncoder().encode(s)
+  let bin = ''
+  for (const b of bytes) bin += String.fromCharCode(b)
+  return btoa(bin)
 }
+
+/** https, or plain http only for a local development host. */
+export function isSecureOrLocal(url: URL): boolean {
+  return (
+    url.protocol === 'https:' ||
+    (url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname))
+  )
+}
+
+/** Printable ASCII only (the gateway issues `<region>.<hex>` nonces). */
+const ASCII_TOKEN = /^[\x21-\x7e]{1,256}$/
 
 export function buildAccessProofToken(proof: {
   address: string
@@ -147,9 +162,12 @@ export async function fetchRelayChallenge(
   relayHost: string,
   opts: { signal?: AbortSignal } = {},
 ): Promise<RelayChallenge> {
-  const res = await fetch(`${relayHost.replace(/\/$/, '')}/v1/challenge`, { signal: opts.signal })
+  const url = new URL('/v1/challenge', relayHost)
+  if (!isSecureOrLocal(url)) throw new Error(`relay host must be https (${relayHost})`)
+  const res = await fetch(url, { signal: opts.signal ?? AbortSignal.timeout(15_000) })
   if (!res.ok) throw new Error(`challenge request failed: ${res.status}`)
   const data = (await res.json()) as { nonce?: string; expiresAt?: number; expires_at?: number }
   if (!data || typeof data.nonce !== 'string') throw new Error('challenge response missing nonce')
+  if (!ASCII_TOKEN.test(data.nonce)) throw new Error('challenge nonce is not printable ASCII')
   return { nonce: data.nonce, expiresAt: data.expiresAt ?? data.expires_at ?? 0 }
 }

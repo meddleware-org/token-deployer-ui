@@ -38,6 +38,9 @@ export function initTemplateWasm(): Promise<unknown> {
   if (!initPromise) {
     initPromise = Promise.resolve()
       .then(() => (init as unknown as (i?: unknown) => unknown)(wasmInput))
+      // Deliberate: under Node the package's nodejs build loads its own wasm and this init call
+      // is unnecessary (and may throw). A genuine browser init failure is not hidden — the first
+      // bytecode call in patchTemplateModule then fails with the wasm error.
       .catch(() => undefined)
   }
   return initPromise

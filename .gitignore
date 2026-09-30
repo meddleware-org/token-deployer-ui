@@ -42,3 +42,7 @@ __screenshots__/
 
 # TypeDoc output (npm run docs)
 docs/api/
+
+# Playwright output
+test-results/
+playwright-report/

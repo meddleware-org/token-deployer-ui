@@ -4,7 +4,6 @@ import { fromBase64 } from '@mysten/sui/utils'
 import {
   buildPublishTransaction,
   buildFinalizeTransaction,
-  needsFinalize,
   extractPublishResult,
 } from '../src/lib/buildPublishTx.js'
 import type { TokenConfig } from '../src/lib/types.js'
@@ -180,25 +179,6 @@ describe('buildFinalizeTransaction', () => {
       (c) => c.MoveCall.function === 'public_freeze_object',
     )
     expect(freeze).toHaveLength(0)
-  })
-})
-
-// ─── needsFinalize ────────────────────────────────────────────────────────────
-
-describe('needsFinalize', () => {
-  it('is false for the pure-default config (publish-only)', () => {
-    expect(needsFinalize(baseConfig(), sender)).toBe(false)
-  })
-
-  it('is true when any policy/supply/recipient differs from the default', () => {
-    expect(needsFinalize(baseConfig({ initialSupply: 1n }), sender)).toBe(true)
-    expect(needsFinalize(baseConfig({ supplyPolicy: 'fixed' }), sender)).toBe(true)
-    expect(needsFinalize(baseConfig({ metadataPolicy: 'frozen' }), sender)).toBe(true)
-    expect(needsFinalize(baseConfig({ recipient }), sender)).toBe(true)
-  })
-
-  it('treats recipient case-insensitively', () => {
-    expect(needsFinalize(baseConfig({ recipient: sender.toUpperCase() }), sender)).toBe(false)
   })
 })
 

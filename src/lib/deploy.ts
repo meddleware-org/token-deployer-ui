@@ -87,10 +87,16 @@ export interface DeployArgs {
   onStep?: (step: DeployStep) => void
 }
 
+/**
+ * Only an explicit `success` effects status counts: a missing status (an executor that did not
+ * return effects) is treated as failure, never as success.
+ */
 function assertSuccess(res: SuiTxResult, what: string): void {
   const status = res.effects?.status?.status
-  if (status && status !== 'success') {
-    throw new Error(`${what} failed: ${res.effects?.status?.error ?? status}`)
+  if (status !== 'success') {
+    throw new Error(
+      `${what} failed: ${res.effects?.status?.error ?? status ?? 'no effects status returned'}`,
+    )
   }
 }
 

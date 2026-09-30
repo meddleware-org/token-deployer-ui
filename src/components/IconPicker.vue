@@ -12,6 +12,12 @@ import {
   personalMessageForNonce,
   buildAccessProofToken,
 } from '../lib/accessGate.js'
+import {
+  consumeStorageKey,
+  defaultStorage,
+  isRedeemedConflict,
+  resolveConsumeDigest,
+} from '../lib/consumeResume.js'
 import type { WalrusNetwork } from '../lib/walrus.js'
 import type { Network } from '../lib/types.js'
 import { UiNotice, UiFieldHint, UiSegmentedControl } from '@meddleware/ui'
@@ -150,36 +156,55 @@ async function upload(): Promise<void> {
     const executor = await buildDeployExecutor(props.network as Network)
     const suiClient = getReadClient(props.network as Network)
 
-    // If the gated operator relay is selected, prove NFT access: (single-use only) consume
-    // one use on-chain bound to the challenge nonce, then sign the challenge. The token rides
-    // the relay Authorization header; the nft-gate gateway verifies it before proxying.
-    let uploadRelayAuthToken: string | undefined
+    // If the gated operator relay is selected, prove NFT access. For single-use passes the
+    // on-chain consume is persisted and REUSED across retries (the gateway redeems a consume
+    // digest exactly once, only on a successful upload), so an interrupted upload never burns a
+    // use; a fresh use is consumed only after the gateway reports the stored one as redeemed.
     const publicHost = availableRelays.value.find((r) => r.isPublic)?.host
     const usingOperatorRelay = selectedRelayHost.value !== publicHost
-    if (accessGate.gateConfigured && usingOperatorRelay && account.value) {
-      const challenge = await fetchRelayChallenge(selectedRelayHost.value)
+    const gated = accessGate.gateConfigured && usingOperatorRelay && accessGate.gate !== null
+    const storage = defaultStorage()
+    const resumeKey = gated
+      ? consumeStorageKey(walrusNet, accessGate.gate!.gateId, account.value.address)
+      : null
+    let relayToken: string | undefined
+
+    async function refreshRelayToken(forceFresh = false): Promise<void> {
+      if (!gated || !account.value) return
       let consumeDigest: string | undefined
-      if (accessGate.usesRemaining.value != null && accessGate.nftId.value) {
-        status.value = 'Consuming one access use (approve in wallet)…'
-        const consumeTx = accessGate.buildConsume(accessGate.nftId.value, challenge.nonce)
-        const cres = await executor.signAndExecute(consumeTx)
-        await executor.waitForTransaction(cres.digest)
-        consumeDigest = cres.digest
+      if (accessGate.usesRemaining.value != null && accessGate.nftId.value && resumeKey) {
+        const nftId = accessGate.nftId.value
+        consumeDigest = await resolveConsumeDigest({
+          storage,
+          key: resumeKey,
+          forceFresh,
+          consume: async () => {
+            status.value = 'Consuming one access use (approve in wallet)…'
+            const challenge = await fetchRelayChallenge(selectedRelayHost.value)
+            const cres = await executor.signAndExecute(accessGate.buildConsume(nftId, challenge.nonce))
+            // The gateway re-reads this transaction (with its own bounded retry), so waiting here
+            // only improves the odds of a first-try success — a failure is surfaced by the upload.
+            await executor.waitForTransaction(cres.digest)
+            return cres.digest
+          },
+        })
       }
       status.value = 'Signing relay access proof…'
+      const challenge = await fetchRelayChallenge(selectedRelayHost.value)
       const { signature } = await signPersonalMessage(personalMessageForNonce(challenge.nonce))
-      uploadRelayAuthToken = buildAccessProofToken({
+      relayToken = buildAccessProofToken({
         address: account.value.address,
         nonce: challenge.nonce,
         signature,
         consumeDigest,
       })
     }
+    await refreshRelayToken()
 
     const client = createWalrusClient(walrusNet, {
       wasmUrl: walrusWasmUrl,
       uploadRelayHost: selectedRelayHost.value,
-      uploadRelayAuthToken,
+      ...(gated ? { uploadRelayAuthToken: () => relayToken } : {}),
     })
     const flow = createBlobUploadFlow(client, bytes)
 
@@ -207,7 +232,18 @@ async function upload(): Promise<void> {
     await executor.waitForTransaction(reg.digest)
 
     status.value = 'Uploading to the relay…'
-    await flow.upload({ digest: reg.digest })
+    try {
+      await flow.upload({ digest: reg.digest })
+    } catch (e) {
+      if (!gated || !resumeKey || !isRedeemedConflict(e)) throw e
+      // The stored consume was already redeemed by an earlier successful upload: spend a fresh
+      // use and retry once (the registration is still fresh).
+      storage.removeItem(resumeKey)
+      await refreshRelayToken(true)
+      status.value = 'Uploading to the relay…'
+      await flow.upload({ digest: reg.digest })
+    }
+    if (resumeKey) storage.removeItem(resumeKey)
 
     status.value = 'Certifying (approve in wallet)…'
     const certTx = flow.certify()
