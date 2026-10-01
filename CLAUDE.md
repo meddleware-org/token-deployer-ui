@@ -84,6 +84,9 @@ the `fetch` layer.
    are loaded on demand (dynamic import / `?url`). Keep the shared `ICON_EPOCHS`
    constant in [src/lib/walrus-constants.ts](src/lib/walrus-constants.ts) so the
    eagerly-rendered widget doesn't pull the Walrus chunk into the main bundle.
+6. **One wallet-adapter in a host.** `@meddleware/wallet-adapter` is a peerDependency
+   (`>=0.0.12 <0.2.0`, plus a devDependency): the host's single copy must satisfy every embedded
+   tool, or each gets its own wallet connection.
 
 ## Walrus icons
 
