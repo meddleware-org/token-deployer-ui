@@ -1,5 +1,5 @@
-// Lightweight Walrus constants with NO heavy imports, so both the (lazily loaded)
-// `lib/walrus.ts` client and the eagerly rendered `IconPicker.vue` component
+// Lightweight Walrus constants with NO heavy imports, so the eagerly rendered `IconPicker.vue`
+// component and the lazily loaded upload
 // can share a single source of truth without pulling `@mysten/walrus` into the
 // component's chunk.
 

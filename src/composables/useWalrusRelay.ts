@@ -4,8 +4,7 @@
 // (`IconPicker.vue`) and tests are unaffected.
 import { useWalrusRelay as useSharedWalrusRelay } from '@meddleware/walrus-relay'
 import type { RelayAccessOptions, RelayOption } from '@meddleware/walrus-relay'
-import { WALRUS_RELAY_HOSTS, PUBLIC_WALRUS_RELAY_HOSTS } from '../config.js'
-import type { WalrusNetwork } from '../lib/walrus.js'
+import { WALRUS_RELAY_HOSTS, PUBLIC_WALRUS_RELAY_HOSTS, type WalrusNetwork } from '../config.js'
 
 export type { RelayAccessOptions, RelayOption }
 

@@ -2,7 +2,7 @@
 // Vite env vars so they can be set at build/deploy time without code changes.
 // See .env.example.
 import type { Network } from './lib/types.js'
-import type { AccessGateConfig } from './lib/accessGate.js'
+import { relayGateConfig, type RelayGateConfig } from '@meddleware/walrus-relay'
 
 const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {}
 
@@ -56,7 +56,7 @@ export const SELECTABLE_NETWORKS: Network[] = ['testnet', 'mainnet']
 // ---------------------------------------------------------------------------
 // Walrus is a separate protocol from Sui; only testnet/mainnet exist (no
 // localnet). Icon uploads go through an upload relay (direct-to-storage-node
-// writes fail from browsers). See `src/lib/walrus.ts` and the relay runbook in
+// writes fail from browsers). The upload is `@meddleware/walrus-client/flow`; see the relay runbook in
 // README.md / CLAUDE.md for the operator side.
 
 /** A Walrus network — a strict subset of {@link Network} (no localnet). */
@@ -113,27 +113,29 @@ export const WALRUS_MAX_TIP_MIST: bigint = BigInt(env.VITE_WALRUS_MAX_TIP_MIST |
 // NFT-gated relay access (optional)
 // ---------------------------------------------------------------------------
 // When the operator relay runs behind an `nft-gate` gateway, using it requires
-// holding the gate's access NFT. Configure the gate per network via env; when a
-// gate is NOT configured the relay behaves exactly as before (no gating). See
-// `src/lib/accessGate.ts` and `useAccessGate`.
+// holding the gate's access NFT. The operator sets the gate id, soulbound flag (default true) and
+// price per network via env; `relayGateConfig` (walrus-relay) fixes the package and PlatformConfig
+// to the published access_gate deployment. When no gate id is set the relay is ungated.
 
-function parseAccessGate(network: WalrusNetwork): AccessGateConfig | null {
+/** The gate config for a network, or `null` (ungated) without a gate id or a recorded deployment. */
+export function parseAccessGate(network: WalrusNetwork, envSource: Record<string, string | undefined> = env): RelayGateConfig | null {
   const NET = network.toUpperCase()
-  const packageId = env[`VITE_ACCESS_GATE_PACKAGE_${NET}`]
-  const gateId = env[`VITE_ACCESS_GATE_ID_${NET}`]
-  const nftType = env[`VITE_ACCESS_GATE_NFT_TYPE_${NET}`]
-  if (!packageId || !gateId || !nftType) return null
-  return {
-    packageId,
-    gateId,
-    nftType,
-    soulbound: (env[`VITE_ACCESS_GATE_SOULBOUND_${NET}`] ?? 'true') !== 'false',
-    priceMist: BigInt(env[`VITE_ACCESS_GATE_PRICE_MIST_${NET}`] || '0'),
+  const gateId = envSource[`VITE_ACCESS_GATE_ID_${NET}`]
+  if (!gateId) return null
+  try {
+    return relayGateConfig(network, {
+      gateId,
+      soulbound: (envSource[`VITE_ACCESS_GATE_SOULBOUND_${NET}`] ?? 'true') !== 'false',
+      priceMist: BigInt(envSource[`VITE_ACCESS_GATE_PRICE_MIST_${NET}`] || '0'),
+    })
+  } catch (e) {
+    console.warn(`[token-deployer-ui] access gate for ${network} disabled: ${e instanceof Error ? e.message : String(e)}`)
+    return null
   }
 }
 
 /** The access gate per Walrus network, or `null` when gating is not configured. */
-export const ACCESS_GATE: Record<WalrusNetwork, AccessGateConfig | null> = {
+export const ACCESS_GATE: Record<WalrusNetwork, RelayGateConfig | null> = {
   testnet: parseAccessGate('testnet'),
   mainnet: parseAccessGate('mainnet'),
 }

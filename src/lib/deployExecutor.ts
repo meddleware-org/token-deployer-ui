@@ -1,63 +1,36 @@
-// Builds a deploy Executor using the wallet-adapter's shared signing capability
-// + the app's gRPC client for execution (returns the object changes required by
-// extractPublishResult).
-//
-// The wallet-adapter's own Executor only returns { digest } which is not sufficient
-// for the token deploy flow; we sign via the shared wallet connection but execute
-// via our own client so we can request effects + object types.
+// Builds the deploy Executor from the wallet-adapter's shared executor, executing through this
+// app's gRPC client (`getReadClient`, which E2E builds stub) and asking for the effects and
+// object types `extractPublishResult` needs. Signing, the chain check and the account binding
+// are the wallet-adapter's.
 
-import { fromBase64 } from '@mysten/sui/utils'
-import { useWallet } from '@meddleware/wallet-adapter'
+import { buildExecutor } from '@meddleware/wallet-adapter'
 import type { Transaction } from '@mysten/sui/transactions'
 import { toSuiTxResult } from './deploy.js'
 import type { SuiTxResult, Executor } from './deploy.js'
 import type { Network } from './types.js'
 import { getReadClient } from './readClient.js'
+import { RPC_URLS } from '../config.js'
 
 /**
- * Build a deploy Executor bound to the currently connected wallet (via the
- * wallet-adapter singleton) and the given network's gRPC client.
+ * Build a deploy Executor bound to the currently connected wallet and `network`.
  *
- * The returned executor signs via `sui:signTransaction` and executes via
- * `executeTransaction` with `effects + objectTypes`, mapped by {@link toSuiTxResult}
- * so the caller can extract the published package ID, coin type, TreasuryCap, etc.
+ * `signAndExecute` requests `effects + objectTypes` and maps the result with
+ * {@link toSuiTxResult}, so the caller can extract the published package id, coin type,
+ * TreasuryCap, MetadataCap and the Currency ref. A failed transaction is returned (not thrown);
+ * `deploy.ts` checks its status.
+ *
+ * @throws {Error} if no wallet is connected, it cannot sign transactions, or its account does not
+ *   list `sui:<network>`.
  */
 export async function buildDeployExecutor(network: Network): Promise<Executor> {
-  const { currentWallet, account } = useWallet()
-  const wallet = currentWallet.value
-  const acct = account.value
-  if (!wallet || !acct) throw new Error('Connect a wallet first.')
-
-  const suiClient = getReadClient(network)
-  const chain = `sui:${network}` as const
-
-  const signFeature = wallet.features['sui:signTransaction'] as
-    | {
-        signTransaction: (input: {
-          transaction: Transaction
-          account: typeof acct
-          chain: `sui:${string}`
-        }) => Promise<{ bytes: string; signature: string }>
-      }
-    | undefined
-  if (!signFeature) throw new Error('This wallet cannot sign transactions.')
-
+  const executor = await buildExecutor(network, RPC_URLS[network], { client: getReadClient(network) })
   return {
     async signAndExecute(tx: Transaction): Promise<SuiTxResult> {
-      const { bytes, signature } = await signFeature.signTransaction({
-        transaction: tx,
-        account: acct,
-        chain,
-      })
-      const res = await suiClient.executeTransaction({
-        transaction: fromBase64(bytes),
-        signatures: [signature],
-        include: { effects: true, objectTypes: true },
-      })
-      return toSuiTxResult(res)
+      const { result } = await executor.signAndExecute(tx, { include: { effects: true, objectTypes: true } })
+      return toSuiTxResult(result)
     },
     async waitForTransaction(digest: string): Promise<void> {
-      await suiClient.waitForTransaction({ digest })
+      await executor.waitForTransaction(digest)
     },
   }
 }

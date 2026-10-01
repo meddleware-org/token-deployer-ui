@@ -22,7 +22,8 @@ and can optionally push it to a new GitHub repo in their own account.
    ([src/lib/generatePackage.ts](src/lib/generatePackage.ts)) that is **byte-identical**
    to the CLI generator's output, so the on-chain package is source-verifiable.
 5. Licenses are fetched live from SPDX ([src/lib/licenses.ts](src/lib/licenses.ts)); an
-   optional icon upload goes to Walrus ([src/lib/walrus.ts](src/lib/walrus.ts)); and an
+   optional icon upload goes to Walrus (`@meddleware/walrus-client/flow`, from
+   [src/components/IconPicker.vue](src/components/IconPicker.vue)); and an
    optional GitHub push uses the user's own token ([src/lib/github.ts](src/lib/github.ts)).
 
 ## Security & trust model

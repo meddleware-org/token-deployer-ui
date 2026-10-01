@@ -11,9 +11,7 @@
     "src/lib/generatePackage.ts",
     "src/lib/licenses.ts",
     "src/lib/github.ts",
-    "src/lib/walrus.ts",
     "src/lib/walrus-constants.ts",
-    "src/composables/useAccessGate.ts",
     "src/composables/useWalrusRelay.ts"
   ],
   "out": "docs/api",

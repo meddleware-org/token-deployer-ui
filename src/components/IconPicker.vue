@@ -4,21 +4,12 @@ import { useWallet } from '@meddleware/wallet-adapter'
 import { buildDeployExecutor } from '../lib/deployExecutor.js'
 import { getReadClient } from '../lib/readClient.js'
 import { useWalrusRelay } from '../composables/useWalrusRelay.js'
-import { useAccessGate } from '../composables/useAccessGate.js'
+import { useAccessGate } from '@meddleware/walrus-relay'
+// The flow subpath carries no wasm; it loads the Walrus client lazily when an upload starts.
+import { consumeStorageKey, createGatedAccess, runBlobUpload } from '@meddleware/walrus-client/flow'
 import { ICON_EPOCHS } from '../lib/walrus-constants.js'
-import { ICON_MAX_BYTES, validateIconFile } from '../config.js'
-import {
-  fetchRelayChallenge,
-  personalMessageForNonce,
-  buildAccessProofToken,
-} from '../lib/accessGate.js'
-import {
-  consumeStorageKey,
-  defaultStorage,
-  isRedeemedConflict,
-  resolveConsumeDigest,
-} from '../lib/consumeResume.js'
-import type { WalrusNetwork } from '../lib/walrus.js'
+import { ACCESS_GATE, ICON_MAX_BYTES, WALRUS_MAX_TIP_MIST, WALRUS_RPC_URLS, validateIconFile } from '../config.js'
+import type { WalrusNetwork } from '../config.js'
 import type { Network } from '../lib/types.js'
 import { UiNotice, UiFieldHint, UiSegmentedControl } from '@meddleware/ui'
 import WalrusBlobBrowser from './WalrusBlobBrowser.vue'
@@ -42,7 +33,7 @@ const isWalrusNetwork = computed(() => props.network !== 'localnet')
 const walrusNet: WalrusNetwork = props.network === 'mainnet' ? 'mainnet' : 'testnet'
 
 // NFT-gated relay access (inert when no gate is configured for this network).
-const accessGate = useAccessGate(walrusNet, { getClient: (n) => getReadClient(n) })
+const accessGate = useAccessGate({ gate: ACCESS_GATE[walrusNet], getClient: () => getReadClient(walrusNet) })
 
 const {
   selectedRelayHost,
@@ -148,112 +139,53 @@ async function upload(): Promise<void> {
     uploadError.value = 'Connect your wallet first.'
     return
   }
+  const address = account.value.address
   uploading.value = true
   uploadError.value = null
   try {
-    const { createWalrusClient, createBlobUploadFlow, walrusBlobUrl } =
-      await import('../lib/walrus.js')
     const executor = await buildDeployExecutor(props.network as Network)
-    const suiClient = getReadClient(props.network as Network)
 
-    // If the gated operator relay is selected, prove NFT access. For single-use passes the
-    // on-chain consume is persisted and REUSED across retries (the gateway redeems a consume
-    // digest exactly once, only on a successful upload), so an interrupted upload never burns a
-    // use; a fresh use is consumed only after the gateway reports the stored one as redeemed.
+    // The gated operator relay needs proof of an access pass. For a single-use pass the on-chain
+    // consume is persisted before the upload and reused on a retry (the gateway redeems a consume
+    // digest once, on a successful upload), so an interrupted upload never burns a use; a fresh use
+    // is spent only after the gateway reports the stored one redeemed.
     const publicHost = availableRelays.value.find((r) => r.isPublic)?.host
-    const usingOperatorRelay = selectedRelayHost.value !== publicHost
-    const gated = accessGate.gateConfigured && usingOperatorRelay && accessGate.gate !== null
-    const storage = defaultStorage()
-    const resumeKey = gated
-      ? consumeStorageKey(walrusNet, accessGate.gate!.gateId, account.value.address)
-      : null
-    let relayToken: string | undefined
+    const gate = accessGate.gate
+    const nftId = accessGate.nftId.value
+    const gated = !!gate && accessGate.hasAccess.value === true && !!nftId && selectedRelayHost.value !== publicHost
+    const access =
+      gated && gate && nftId
+        ? createGatedAccess({
+            storage: window.localStorage,
+            key: consumeStorageKey(walrusNet, gate.gateId, address),
+            relayHost: selectedRelayHost.value,
+            address,
+            nftId,
+            singleUse: accessGate.usesRemaining.value !== null,
+            buildConsume: (id, nonce) => accessGate.buildConsume(id, nonce),
+            signAndExecute: (tx) => executor.signAndExecute(tx),
+            waitForTransaction: (digest) => executor.waitForTransaction(digest),
+            sign: signPersonalMessage,
+            onStatus: (p) => (status.value = p.detail ?? ''),
+          })
+        : undefined
 
-    async function refreshRelayToken(forceFresh = false): Promise<void> {
-      if (!gated || !account.value) return
-      let consumeDigest: string | undefined
-      if (accessGate.usesRemaining.value != null && accessGate.nftId.value && resumeKey) {
-        const nftId = accessGate.nftId.value
-        consumeDigest = await resolveConsumeDigest({
-          storage,
-          key: resumeKey,
-          forceFresh,
-          consume: async () => {
-            status.value = 'Consuming one access use (approve in wallet)…'
-            const challenge = await fetchRelayChallenge(selectedRelayHost.value)
-            const cres = await executor.signAndExecute(accessGate.buildConsume(nftId, challenge.nonce))
-            // The gateway re-reads this transaction (with its own bounded retry), so waiting here
-            // only improves the odds of a first-try success — a failure is surfaced by the upload.
-            await executor.waitForTransaction(cres.digest)
-            return cres.digest
-          },
-        })
-      }
-      status.value = 'Signing relay access proof…'
-      const challenge = await fetchRelayChallenge(selectedRelayHost.value)
-      const { signature } = await signPersonalMessage(personalMessageForNonce(challenge.nonce))
-      relayToken = buildAccessProofToken({
-        address: account.value.address,
-        nonce: challenge.nonce,
-        signature,
-        consumeDigest,
-      })
-    }
-    await refreshRelayToken()
-
-    const client = createWalrusClient(walrusNet, {
+    const result = await runBlobUpload({
+      bytes,
+      network: walrusNet,
+      relayHost: selectedRelayHost.value,
+      address,
+      rpcUrl: WALRUS_RPC_URLS[walrusNet],
       wasmUrl: walrusWasmUrl,
-      uploadRelayHost: selectedRelayHost.value,
-      ...(gated ? { uploadRelayAuthToken: () => relayToken } : {}),
-    })
-    const flow = createBlobUploadFlow(client, bytes)
-
-    status.value = 'Encoding…'
-    await flow.encode()
-
-    let feeNote = ''
-    try {
-      const tipMist = await client.walrus.calculateUploadRelayTip({ size: bytes.length })
-      const tipSui = Number(tipMist) / 1e9
-      feeNote = tipMist > 0n ? ` Relay fee ≈ ${tipSui.toFixed(4)} SUI + storage (WAL).` : ''
-    } catch {
-      // Non-fatal — the register step surfaces any real tip error.
-    }
-
-    status.value = `Registering blob (approve in wallet)…${feeNote}`
-    const regTx = flow.register({
-      owner: account.value.address,
+      maxTipMist: Number(WALRUS_MAX_TIP_MIST),
       epochs: ICON_EPOCHS,
       deletable: !permanent.value,
+      executor,
+      suiClient: getReadClient(props.network as Network),
+      access,
+      onStatus: (p) => (status.value = p.detail ?? ''),
     })
-    regTx.setSenderIfNotSet(account.value.address)
-    await regTx.build({ client: suiClient })
-    const reg = await executor.signAndExecute(regTx)
-    await executor.waitForTransaction(reg.digest)
-
-    status.value = 'Uploading to the relay…'
-    try {
-      await flow.upload({ digest: reg.digest })
-    } catch (e) {
-      if (!gated || !resumeKey || !isRedeemedConflict(e)) throw e
-      // The stored consume was already redeemed by an earlier successful upload: spend a fresh
-      // use and retry once (the registration is still fresh).
-      storage.removeItem(resumeKey)
-      await refreshRelayToken(true)
-      status.value = 'Uploading to the relay…'
-      await flow.upload({ digest: reg.digest })
-    }
-    if (resumeKey) storage.removeItem(resumeKey)
-
-    status.value = 'Certifying (approve in wallet)…'
-    const certTx = flow.certify()
-    certTx.setSenderIfNotSet(account.value.address)
-    await certTx.build({ client: suiClient })
-    const cert = await executor.signAndExecute(certTx)
-    await executor.waitForTransaction(cert.digest)
-
-    const blob = await flow.getBlob()
-    emit('update:modelValue', walrusBlobUrl(walrusNet, blob.blobId))
+    emit('update:modelValue', result.url)
     tab.value = 'url'
     status.value = 'Uploaded ✓ — URL filled in above.'
   } catch (e) {
@@ -261,6 +193,7 @@ async function upload(): Promise<void> {
     status.value = ''
   } finally {
     uploading.value = false
+    if (account.value) void refreshAccess() // uses remaining may have changed
   }
 }
 

@@ -26,13 +26,13 @@ The pattern mirrors `@meddleware/walrus-ui`, `@meddleware/seal-ui`, and
 `@meddleware/access-gate-ui`. See the dashboard `CLAUDE.md` for the invariant: every tool view
 must **not** render its own wallet bar, header, or footer when embedded.
 
-**Deploy executor note:** The wallet-adapter `Executor` only returns `{ digest }` — insufficient
-for the deploy flow, which requires the created objects to extract the packageId, coin type,
-TreasuryCap, MetadataCap and the Currency ref. `src/lib/deployExecutor.ts` uses the wallet-adapter
-singleton for wallet connection state, but executes through the app's own `SuiGrpcClient`
-(`getReadClient`) with `include: { effects, objectTypes }`, and `toSuiTxResult` (`src/lib/deploy.ts`)
-maps `effects.changedObjects` onto the `objectChanges` shape `extractPublishResult` reads. This is
-intentional — do not replace it with the wallet-adapter `buildExecutor`.
+**Deploy executor note:** The deploy flow needs the created objects (packageId, coin type,
+TreasuryCap, MetadataCap, Currency ref). `src/lib/deployExecutor.ts` wraps the wallet-adapter's
+`buildExecutor(network, rpcUrl, { client: getReadClient(network) })` — signing, the chain check and
+the account binding are the adapter's; execution goes through this app's client (which E2E builds
+stub) — and calls `signAndExecute(tx, { include: { effects, objectTypes } })`. `toSuiTxResult`
+(`src/lib/deploy.ts`) maps the result onto the `objectChanges` shape `extractPublishResult` reads.
+Do not reintroduce signing code here.
 
 **gRPC only.** Public fullnodes have deprecated JSON-RPC; every chain call (app and `scripts/`)
 goes through `SuiGrpcClient`, and `VITE_RPC_*` / `E2E_RPC` must be gRPC(-web) endpoints. Do not
@@ -114,7 +114,8 @@ the relay source `crates/walrus-upload-relay`.)
 - **NFT / usage-ticket per-wallet gating is IMPLEMENTED (2026-08-05)** via the standalone
   `nft-gate` project: an `nft-gate` gateway fronts the operator relay and admits only
   holders of an `access_gate` NFT. The app gates the operator-relay option on ownership
-  (`useAccessGate` → `listOwnedObjects`), offers a permissionless purchase CTA, and attaches
+  (walrus-relay `useAccessGate`, built with `relayGateConfig` so the package and PlatformConfig are
+  the published deployment), offers a permissionless purchase CTA, and attaches
   a wallet-signed access proof (`sui:signPersonalMessage` → `uploadRelayAuthToken`) when the
   operator relay is used. Unset `VITE_ACCESS_GATE_*` → no gating (unchanged behaviour). The
   tip and the NFT are **independent levers** (tip = per-upload cost; NFT = access/abuse).
@@ -139,10 +140,12 @@ the relay source `crates/walrus-upload-relay`.)
   one hour (Walrus default).
 - **Gated-relay proof delivery.** The `@mysten/walrus` upload-relay options are only
   `{ host, fetch, timeout, onError }`; the access proof is injected through the `fetch` hook
-  (`relayAuthFetch`, relay origin only, https only). A `headers` option would be silently
-  dropped. The single-use consume digest is persisted
-  (`mw:token-deployer:consume:<network>:<gate>:<address>`) and reused until the gateway reports it
-  redeemed (`src/lib/consumeResume.ts`).
+  (`relayAuthFetch` in `@meddleware/walrus-client`, relay origin only, https only). A `headers`
+  option would be silently dropped. The upload is `runBlobUpload` from
+  `@meddleware/walrus-client/flow`; for the gated relay `createGatedAccess` persists the
+  single-use consume digest (`mw:walrus:consume:<network>:<gate>:<address>` — the same key as
+  walrus-ui, so embedded in the dashboard the two tools share one redemption token for a gate) and
+  reuses it until the gateway reports it redeemed.
 - **Client-side icon size/type limits are UX only — NOT security.** The authoritative
   cap is a hard request-body limit at the edge (the relay otherwise buffers up to a
   hardcoded 1 GiB body into RAM *before* the tip check — the one real abuse vector:

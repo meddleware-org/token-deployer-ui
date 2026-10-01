@@ -2,7 +2,8 @@
 import { ref, watch } from 'vue'
 import { useWallet } from '@meddleware/wallet-adapter'
 import { getReadClient } from '../lib/readClient.js'
-import type { OwnedBlob, WalrusNetwork } from '../lib/walrus.js'
+import type { OwnedBlob } from '@meddleware/walrus-client'
+import { WALRUS_RPC_URLS, type WalrusNetwork } from '../config.js'
 import type { Network } from '../lib/types.js'
 import { UiNotice } from '@meddleware/ui'
 
@@ -46,10 +47,9 @@ async function load(): Promise<void> {
   blobs.value = []
   hasLoaded.value = false
   try {
-    const { createWalrusClient, walrusBlobUrl, fetchOwnedWalrusBlobs } =
-      await import('../lib/walrus.js')
+    const { createWalrusClient, walrusBlobUrl, fetchOwnedWalrusBlobs } = await import('@meddleware/walrus-client')
     const suiClient = getReadClient(props.network as Network)
-    const client = createWalrusClient(props.network)
+    const client = createWalrusClient({ network: props.network, rpcUrl: WALRUS_RPC_URLS[props.network] })
     const raw = await fetchOwnedWalrusBlobs(suiClient, client, addr)
     blobs.value = raw.map((b) => ({ ...b, url: walrusBlobUrl(props.network, b.blobId) }))
     hasLoaded.value = true
