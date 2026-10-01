@@ -38,6 +38,7 @@ const accessGate = useAccessGate({ gate: ACCESS_GATE[walrusNet], getClient: () =
 const {
   selectedRelayHost,
   availableRelays,
+  relayPending,
   purchaseAccessAvailable,
   estimatedCost,
   fileSizeBytes,
@@ -255,7 +256,14 @@ function onBrowseSelect(url: string): void {
           class="icon-file"
           @change="onFile"
         />
-        <button type="button" :disabled="uploading || !connected || !fileName" @click="upload">
+        <!-- No relay is offered while the operator relay's health or pass check is pending, or
+             while a gated relay is up and this wallet has no pass: upload is blocked then
+             (walrus-relay useWalrusRelay policy). -->
+        <button
+          type="button"
+          :disabled="uploading || !connected || !fileName || availableRelays.length === 0"
+          @click="upload"
+        >
           <span v-if="uploading" class="spinner" aria-hidden="true"></span>
           Upload to Walrus
         </button>
@@ -300,11 +308,14 @@ function onBrowseSelect(url: string): void {
         <strong>Estimated cost:</strong> {{ estimatedCost.label }}
       </UiNotice>
 
-      <!-- NFT-gated relay: the operator relay is live but this wallet lacks the access NFT.
-           The public relay is still available; purchasing unlocks the operator relay. -->
+      <p v-if="fileName && connected && relayPending" class="hint icon-notice" role="status">
+        Checking the upload relay…
+      </p>
+
+      <!-- NFT-gated relay: the operator relay is live but this wallet lacks the access pass. While
+           the operator relay is up it is the only relay offered, so uploading needs a pass. -->
       <UiNotice v-if="fileName && purchaseAccessAvailable" class="icon-notice">
-        The operator relay requires an access NFT. You can keep using the public relay, or purchase
-        access to support this app’s relay.
+        Uploading through this app’s relay requires an access pass.
         <button
           type="button"
           class="icon-notice__cta"
