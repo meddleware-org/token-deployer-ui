@@ -192,7 +192,11 @@ Three distinct categories — do not collapse them (repo convention):
   `scripts/e2e-browser.mjs` is a thin `E2E_NETWORK=localnet` wrapper. `scripts/e2e-walrus-browser.mjs`
   (`npm run e2e:walrus`, testnet only) uploads a generated icon through the widget via the public
   relay, or with `E2E_RELAY=operator` through the NFT-gated relay (buys a pass if needed, consume +
-  signed proof), and checks the aggregator serves the exact bytes. Both harnesses share
+  signed proof), and checks the aggregator serves the exact bytes and which relay host was used.
+  While the operator relay is up it is the only relay offered (walrus-relay policy), so the public
+  case needs a build without `VITE_WALRUS_RELAY_TESTNET`; the operator case must run on an origin
+  the gateway allows (`APP_URL=https://dash.meddleware.co.uk/blockchain E2E_TAB="Token Deployer"`).
+  Passed 2026-10-01 through the operator relay. Both harnesses share
   [scripts/e2e-wallet.mjs](scripts/e2e-wallet.mjs): the injected wallet forwards transaction JSON
   and node rebuilds + signs it with its own client (plus `sui:signPersonalMessage`), so they run
   against the ordinary production build with no app test hooks. Testnet/mainnet are **manual only** — never in automatic CI (see the README launch runbook). The

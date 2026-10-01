@@ -168,7 +168,11 @@ Two tests enforce this invariant in CI so it can never silently drift:
   is a thin localnet wrapper over it.
 - `scripts/e2e-walrus-browser.mjs` (`npm run e2e:walrus`) — the Walrus icon uploader end-to-end on
   testnet with an injected wallet (`SUI_PRIV` with SUI + WAL); `E2E_RELAY=operator` exercises the
-  NFT-gated relay (pass purchase, consume, signed proof). Manual only — it spends real funds.
+  NFT-gated relay (pass purchase, consume, signed proof) and asserts the upload went through it.
+  The gateway only allows CORS from its own sites, so run the operator case against the dashboard:
+  `E2E_RELAY=operator APP_URL=https://dash.meddleware.co.uk/blockchain E2E_TAB="Token Deployer"
+  node scripts/e2e-walrus-browser.mjs` (a local build falls back to the public relay). Manual only —
+  it spends real funds (testnet WAL: `walrus get-wal`).
 
 ## Real-chain e2e / launch runbook
 
