@@ -16,6 +16,8 @@
 //
 // The npm scripts (e2e:localnet / e2e:testnet / e2e:mainnet) build the app with the matching
 // VITE_RPC_* / VITE_FEE_TREASURY_* envs and serve dist on APP_URL before invoking this runner.
+// To drive the deployer embedded in the dashboard, point APP_URL at its page and set E2E_TAB:
+//   APP_URL=http://localhost:4173/blockchain E2E_TAB="Token Deployer"
 
 import { readFileSync } from 'node:fs'
 import { SuiGrpcClient } from '@mysten/sui/grpc'
@@ -120,6 +122,9 @@ async function main() {
   // feature/chain checks are satisfied; transactions are rebuilt + signed node-side.
   await injectWallet(page, { keypair, client, chain: `sui:${APP_NETWORK}` })
   await page.goto(APP_URL, { waitUntil: 'networkidle' })
+  if (process.env.E2E_TAB) {
+    await page.getByRole('tab', { name: process.env.E2E_TAB }).click()
+  }
   await connectWallet(page, APP_NETWORK)
   console.log('wallet connected in UI')
 
