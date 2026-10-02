@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Lists the coins the connected wallet has deployed (owned TreasuryCap<T> objects). Read-only,
-// mirroring access-gate's "My Gates". Loads on mount + whenever the connected address changes.
+// mirroring access-gate's "My Gates". Loads on mount and whenever the address or network changes.
 import { computed, ref, watch } from 'vue'
 import {
   CopyableAddress,
@@ -24,24 +24,33 @@ const tokens = ref<DeployedToken[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 
+// Each load gets a number; a result that arrives after a newer load started (an account or network
+// switch mid-request) is dropped, so one account's or network's tokens never show under another.
+let latest = 0
+
 async function load(): Promise<void> {
+  const run = ++latest
   if (!props.owner) {
     tokens.value = []
+    error.value = null
+    loading.value = false
     return
   }
   loading.value = true
   error.value = null
   try {
-    tokens.value = await listMyTokens(getReadClient(props.network), props.owner)
+    const found = await listMyTokens(getReadClient(props.network), props.owner)
+    if (run === latest) tokens.value = found
   } catch (e) {
+    if (run !== latest) return
     error.value = e instanceof Error ? e.message : String(e)
     tokens.value = []
   } finally {
-    loading.value = false
+    if (run === latest) loading.value = false
   }
 }
 
-watch(() => props.owner, load, { immediate: true })
+watch(() => [props.owner, props.network] as const, load, { immediate: true })
 defineExpose({ reload: load })
 </script>
 
