@@ -82,6 +82,12 @@ The token logic lives in [`@meddleware/sui-token-client`](https://github.com/med
    (`>=0.0.12 <0.2.0`, plus a devDependency): the host's single copy must satisfy every embedded
    tool, or each gets its own wallet connection.
 
+7. **A published coin is never deployed twice.** `src/composables/useDeploy.ts` routes every failure
+   after the publish executed (`PublishedError` from the client) away from the review step: an
+   unfinished setup offers **Finish setup** (`finalizeToken`, one more signature), an unreadable
+   result shows the publish digest, an unconfirmed setup shows the result. Only a failure before the
+   publish returns to the review.
+
 ## Walrus icons
 
 Icons are RAW blobs (not quilts) so `GET /v1/blobs/<id>` renders the exact image;
