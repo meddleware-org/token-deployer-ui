@@ -9,7 +9,8 @@ import {
   hasAllowedIconScheme,
   isValidDecimals,
   parseSupply,
-  validateIdentifier,
+  validateModuleName,
+  validatePackageName,
   type TokenConfig,
 } from '@meddleware/sui-token-client'
 
@@ -42,9 +43,9 @@ function textError(value: string, max: number, required: boolean): string | unde
 export function validateForm(form: ValidatableForm): FormErrors {
   const errors: FormErrors = {}
 
-  const packageNameError = validateIdentifier(form.packageName)
+  const packageNameError = validatePackageName(form.packageName)
   if (packageNameError) errors.packageName = packageNameError
-  const moduleNameError = validateIdentifier(form.moduleName)
+  const moduleNameError = validateModuleName(form.moduleName)
   if (moduleNameError) errors.moduleName = moduleNameError
 
   const symbol = textError(form.symbol, TOKEN_LIMITS.symbol, true)

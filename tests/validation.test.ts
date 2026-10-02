@@ -64,6 +64,9 @@ describe('validateForm', () => {
     expect(validateForm({ ...good, packageName: 'module' }).packageName).toBeTruthy()
     expect(validateForm({ ...good, moduleName: 'struct' }).moduleName).toBeTruthy()
     expect(validateForm({ ...good, moduleName: 'public' }).moduleName).toBeTruthy()
+    // Names the coin module or the framework already uses fail on-chain or in the source build.
+    expect(validateForm({ ...good, moduleName: 'coin' }).moduleName).toMatch(/already used/)
+    expect(validateForm({ ...good, packageName: 'sui' }).packageName).toMatch(/framework/)
   })
 
   it('rejects over-length identifiers', () => {
