@@ -29,10 +29,10 @@ must **not** render its own wallet bar, header, or footer when embedded.
 **Deploy executor note:** The deploy flow needs the created objects (packageId, coin type,
 TreasuryCap, MetadataCap, Currency ref). `src/lib/deployExecutor.ts` wraps the wallet-adapter's
 `buildExecutor(network, rpcUrl, { client: getReadClient(network) })` — signing, the chain check and
-the account binding are the adapter's; execution goes through this app's client (which E2E builds
-stub) — and calls `signAndExecute(tx, { include: { effects, objectTypes } })`. `toSuiTxResult`
-(`src/lib/deploy.ts`) maps the result onto the `objectChanges` shape `extractPublishResult` reads.
-Do not reintroduce signing code here.
+the account binding are the adapter's; execution goes through this app's client (`src/wallet.ts`,
+which E2E builds stub) — and calls `signAndExecute(tx, { include: { effects, objectTypes } })`.
+`toSuiTxResult` (`@meddleware/sui-token-client/deploy`) maps the result onto the shape
+`extractPublishResult` reads. Do not reintroduce signing code here.
 
 **gRPC only.** Public fullnodes have deprecated JSON-RPC; every chain call (app and `scripts/`)
 goes through `SuiGrpcClient`, and `VITE_RPC_*` / `E2E_RPC` must be gRPC(-web) endpoints. Do not
@@ -43,38 +43,32 @@ the `fetch` layer.
 
 ## Architecture (the money/parity paths matter most)
 
-- **Bytecode patching** — [src/lib/template.ts](src/lib/template.ts) deserialises
-  one pre-compiled template module ([src/move-template/](src/move-template/)),
-  renames the module/OTW-struct identifiers in place, and overwrites five DISTINCT
-  named constants (decimals, symbol, name, description, iconUrl), then re-serialises.
-  Binary format v7 cannot be round-tripped by `update_identifiers`/`update_constants`
-  ("missing field version"); `deserialize`→mutate JSON→`serialize` is the path.
-- **Two-phase publish** — TreasuryCap/MetadataCap are created in `init()` and sent
-  to the sender, so they are NOT `tx.publish` results. Publish PTB
-  ([src/lib/buildPublishTx.ts](src/lib/buildPublishTx.ts)) = publish + UpgradeCap
-  policy + fee split from gas. A finalize PTB **always** follows (it runs
-  `coin_registry::finalize_registration`, then mints supply and applies supply/metadata
-  policies).
-- **Orchestration** — [src/lib/deploy.ts](src/lib/deploy.ts) sequences patch →
-  publish → wait → (finalize) via an injectable `Executor` (so it is unit-testable;
-  the real one is built from the wallet in
-  [src/lib/deployExecutor.ts](src/lib/deployExecutor.ts)).
-- **Package generation** — [src/lib/generatePackage.ts](src/lib/generatePackage.ts)
-  substitutes the same inputs into the canonical template text
-  ([src/template-src/files.json](src/template-src/files.json)) and zips it.
+The token logic lives in [`@meddleware/sui-token-client`](https://github.com/meddleware-org/sui-token-client)
+(workspace B7); this app keeps the UI, the wallet wiring and the form messages.
+
+| Layer | Where |
+| --- | --- |
+| Rules (identifiers, safe text, icon schemes, decimals 0–18, supply), `assertTokenConfig` | client `.` |
+| Bytecode patching of the pinned, generated template module | client `./template` (`configureTemplateWasm` in [src/templateWasm.ts](src/templateWasm.ts), imported by both entries) |
+| Publish + finalize PTBs, exact-type result parsing, `deployToken` | client `.` / `./deploy` |
+| Source package (files + zip) | client `./package` |
+| Owned coins (`listMyTokens(getReadClient(network), owner)`) | client `.` |
+| Form model and per-field messages | [src/lib/form.ts](src/lib/form.ts), [src/lib/validation.ts](src/lib/validation.ts) (uses the client's `TOKEN_LIMITS`) |
+| Read client (wallet-adapter `getSuiClient`, E2E stub via `setReadClient`) | [src/wallet.ts](src/wallet.ts) |
+| Wallet executor | [src/lib/deployExecutor.ts](src/lib/deployExecutor.ts) |
+
+- **Two-phase publish** — TreasuryCap/MetadataCap are created in `init()` and sent to the sender, so
+  they are not `tx.publish` results. The publish PTB = publish + UpgradeCap policy + fee split from
+  gas; a finalize PTB always follows (`coin_registry::finalize_registration`, then supply and
+  metadata policies).
 
 ## Invariants (do not break)
 
-1. **Bytecode ↔ source parity.** The shipped `.mv` and `files.json` must both derive
-   from the same `sui-token-template` commit. Enforced by
-   [tests/templateArtifact.test.ts](tests/templateArtifact.test.ts) (defaults present
-   in the `.mv`) and [tests/templateParity.test.ts](tests/templateParity.test.ts)
-   (`files.json` == canonical sources). After changing the template run
-   `npm run regen:template && npm run sync:template && npm run verify:template`.
-2. **Injection safety is layered.** `validation.ts` gates the form, but
-   `generatePackage.ts` (`assertSafeConfig`) and `template.ts` (`patchVecConstant`)
-   re-assert `SAFE_TEXT`/`MOVE_IDENT`/length/keyword rules independently. Never
-   remove a downstream guard on the assumption the form already checked.
+1. **Bytecode ↔ source parity** is the client's job: its artefact is generated from the exact
+   `@meddleware/sui-token-template` it pins and checked in CI (`check:template`). To pick up a
+   template change, release the client and bump it here — never vendor template files into this app.
+2. **Injection safety is layered.** `validation.ts` gates the form; the client re-asserts every rule
+   (`assertTokenConfig`) before patching, publishing or generating. Never bypass the client's checks.
 3. **Fee integrity.** The fee is split from `tx.gas` to the config treasury inside
    the publish PTB. The vite production build fails on a zero-address treasury
    (`assertTreasuryConfigured` in [vite.config.ts](vite.config.ts)).
@@ -122,6 +116,8 @@ the relay source `crates/walrus-upload-relay`.)
   a wallet-signed access proof (`sui:signPersonalMessage` → `uploadRelayAuthToken`) when the
   operator relay is used. Unset `VITE_ACCESS_GATE_*` → no gating (unchanged behaviour). The
   tip and the NFT are **independent levers** (tip = per-upload cost; NFT = access/abuse).
+  The standalone site is gated too (workspace D21, 2026-10-01): its build carries the
+  `VITE_ACCESS_GATE_*_TESTNET` variables and the gateway allows its origin.
 - **Per-wallet rate limiting** — previously rejected at the edge (which can't resolve the
   wallet), it is now enforced by the `nft-gate` gateway *after* verification. Keep a per-IP
   edge limit as a coarse pre-auth control.
@@ -158,8 +154,9 @@ the relay source `crates/walrus-upload-relay`.)
 
 Three distinct categories — do not collapse them (repo convention):
 
-- **Pure unit (Vitest, `npm test`):** validation, licenses, github, template patch, PTB
-  builders, generatePackage, deploy orchestration, provenance/parity.
+- **Pure unit (Vitest, `npm test`):** form validation, licenses, github, errors, the deploy
+  executor, wallet and relay-gating composables. Patching, PTBs, result parsing, deploy
+  orchestration and package generation are tested in `@meddleware/sui-token-client`.
 - **Mocked-RPC UI e2e (Playwright, `npm run test:e2e`):** wallet/form/publish flow against the
   stub Sui client + mock wallet in [src/main.ts](src/main.ts). Specs live in
   [e2e/app.spec.ts](e2e/app.spec.ts): connect/disconnect, no-wallet notice, network choice, identity

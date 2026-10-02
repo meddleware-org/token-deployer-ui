@@ -1,30 +1,30 @@
 # @meddleware/token-deployer-ui
 
 A browser front-end that lets anyone deploy their own Sui coin — a client-side
-equivalent of `blockchain/sui/sui-token-template`. **Everything runs in the
+equivalent of [`sui-token-template`](https://github.com/meddleware-org/sui-token-template)'s CLI. **Everything runs in the
 browser**: the user's wallet signs and pays gas, and nothing is compiled or
 signed on a server. The user also gets the full, verifiable Move source package,
 and can optionally push it to a new GitHub repo in their own account.
 
 ## How it works
 
-1. Ships one pre-compiled `sui_token_template` Move module whose metadata fields
-   are DISTINCT named constants, so they can be patched
-   ([src/move-template/](src/move-template/)).
+The token logic is [`@meddleware/sui-token-client`](https://github.com/meddleware-org/sui-token-client);
+this app is its UI.
+
+1. The client ships one pre-compiled `sui_token_template` module (generated from the pinned
+   `@meddleware/sui-token-template`) whose metadata fields are distinct named constants.
 2. In the browser, [`@mysten/move-bytecode-template`](https://www.npmjs.com/package/@mysten/move-bytecode-template)
-   deserialises the module; the identifiers + constant pool are patched to the
-   user's values ([src/lib/template.ts](src/lib/template.ts)) and it is re-serialised.
-3. A publish PTB ([src/lib/buildPublishTx.ts](src/lib/buildPublishTx.ts)) publishes
-   the module, applies the UpgradeCap policy, and splits a trivial fee to the
-   operator treasury. A follow-up finalize PTB mints the initial supply and applies
-   the supply/metadata policies when they differ from the defaults.
-4. The same inputs generate a full, downloadable source package
-   ([src/lib/generatePackage.ts](src/lib/generatePackage.ts)) that is **byte-identical**
-   to the CLI generator's output, so the on-chain package is source-verifiable.
-5. Licenses are fetched live from SPDX ([src/lib/licenses.ts](src/lib/licenses.ts)); an
-   optional icon upload goes to Walrus (`@meddleware/walrus-client/flow`, from
-   [src/components/IconPicker.vue](src/components/IconPicker.vue)); and an
-   optional GitHub push uses the user's own token ([src/lib/github.ts](src/lib/github.ts)).
+   decodes it; the identifiers and constant pool are patched to the user's values and it is
+   re-encoded ([src/templateWasm.ts](src/templateWasm.ts) points the patcher at the wasm asset).
+3. A publish PTB publishes the module, applies the UpgradeCap policy and splits a trivial fee to the
+   operator treasury; a finalize PTB registers the currency, mints the initial supply and applies the
+   supply/metadata policies.
+4. The same inputs generate a full, downloadable source package that matches the CLI generator's
+   output, so the on-chain package is source-verifiable.
+5. Licences are fetched live from SPDX ([src/lib/licenses.ts](src/lib/licenses.ts)); an optional
+   icon upload goes to Walrus (`@meddleware/walrus-client/flow`, from
+   [src/components/IconPicker.vue](src/components/IconPicker.vue)); and an optional GitHub push uses
+   the user's own token ([src/lib/github.ts](src/lib/github.ts)).
 
 ## Security & trust model
 
@@ -34,11 +34,9 @@ and can optionally push it to a new GitHub repo in their own account.
 - **No endorsement.** The tool is neutral; it does not vet or endorse created
   tokens or their creators. This is stated in the review, result, and footer UI.
 - **Defence in depth.** User input is validated at the form
-  ([src/lib/validation.ts](src/lib/validation.ts)) *and* re-asserted before it is
-  substituted into Move source / shell scripts
-  ([src/lib/generatePackage.ts](src/lib/generatePackage.ts)) and before it is
-  patched into the bytecode ([src/lib/template.ts](src/lib/template.ts)), so no
-  quote/backslash/control character or reserved Move keyword can ever produce an
+  ([src/lib/validation.ts](src/lib/validation.ts)) *and* re-asserted by the client
+  (`assertTokenConfig`) before it is patched into bytecode or substituted into Move source and
+  shell scripts, so no quote/backslash/control character or reserved Move keyword can produce an
   injectable package.
 - **Fee integrity.** The fee is split from the user's own gas coin to the operator
   treasury inside the publish PTB and cannot be redirected at runtime. A production
@@ -141,26 +139,15 @@ tip, so third-party use is *profitable* as long as the tip keeps margin.
 
 ## Keeping the template in sync (single source of truth)
 
-The shipped bytecode and the downloadable source both derive from
-`@meddleware/sui-token-template` (`optionalDependencies`). After changing that template, re-run:
-
-```bash
-npm run regen:template   # recompiles + refreshes src/move-template/*
-npm run sync:template    # refreshes src/template-src/files.json
-npm run verify:template  # bytecode round-trip + provenance/parity tests
-```
-
-Two tests enforce this invariant in CI so it can never silently drift:
-
-- [tests/templateParity.test.ts](tests/templateParity.test.ts) — `files.json`
-  matches the canonical template sources verbatim.
-- [tests/templateArtifact.test.ts](tests/templateArtifact.test.ts) — the shipped
-  `.mv` still contains the identifiers/constants the patcher expects.
+The bytecode and the downloadable source both come from `@meddleware/sui-token-client`, which
+generates them from the exact `@meddleware/sui-token-template` it pins and checks them in CI. After a
+template change: release the template, bump it in the client (`npm run gen:template`), release the
+client, then bump the client here.
 
 ## Verification scripts
 
-- `scripts/publish-localnet.mjs` — patch → publish → finalize against a local Sui node
-  (node, no browser).
+- `npm run e2e:localnet` in `@meddleware/sui-token-client` — patch → publish → finalize against a
+  local Sui node (node, no browser).
 - `scripts/e2e-deploy.mjs` — the **network-parametrized real-chain deploy e2e** (headless
   browser + injected wallet): drives the full UI, does a REAL publish, waits for real
   confirmation, checks the result panel, downloads the source zip, and verifies coin type +

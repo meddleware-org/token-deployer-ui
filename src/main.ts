@@ -5,10 +5,10 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import './styles.css'
 import './component-styles.css'
-import { configureWasm } from './lib/template.js'
-// Static: readClient is already in the main chunk (IconPicker, WalrusBlobBrowser and listMyTokens
+import './templateWasm.js'
+// Static: the read client is already in the main chunk (IconPicker, WalrusBlobBrowser and MyTokens
 // import it), so a dynamic import in the E2E block below could not split it out anyway.
-import { setReadClient } from './lib/readClient.js'
+import { setReadClient } from './wallet.js'
 import type { SuiGrpcClient } from '@mysten/sui/grpc'
 import { useColorMode, useSeason } from '@meddleware/ui'
 
@@ -18,13 +18,6 @@ useColorMode('system')
 
 // Enable seasonal theming (sets data-season on <html>; seasons.css is imported above).
 useSeason()
-
-// Vite serves the wasm as an asset URL; wasm-bindgen's init loads it on demand.
-import wasmUrl from '@mysten/move-bytecode-template/web/move_bytecode_template_bg.wasm?url'
-
-// Register the URL only; the 343 kB wasm is fetched lazily at first deploy so it
-// doesn't block initial page load.
-configureWasm(wasmUrl)
 
 // E2E-only: stub the Sui client, register a mock wallet and expose getSuiClient for headless tests.
 // Wrapped in async IIFE to ensure wallet is registered BEFORE app mounts (timing critical).

@@ -4,8 +4,9 @@
 
 This policy covers `@meddleware/token-deployer-ui`: the browser app (and embeddable view) that lets a
 user publish their own Sui coin from their wallet, pay the operator fee, and download the matching
-Move source package. It covers `src/**`, the shipped template artifacts (`src/move-template/*.mv`,
-`src/template-src/files.json`), the build configuration and the real-chain harness scripts.
+Move source package. It covers `src/**`, the build configuration and the real-chain harness scripts.
+The template artefacts, patching and transaction building are `@meddleware/sui-token-client`'s
+(report those in that repository).
 
 It does not cover `@meddleware/sui-token-template` (its own policy), the Walrus network, the
 NFT-gated upload relay (`nft-gate`), or the user's wallet.

@@ -19,12 +19,12 @@ import {
 import { emptyForm, toTokenConfig } from '../lib/form.js'
 import { validateForm } from '../lib/validation.js'
 import type { FormErrors } from '../lib/validation.js'
-import { deployToken } from '../lib/deploy.js'
-import type { DeployStep } from '../lib/deploy.js'
+import { deployToken } from '@meddleware/sui-token-client/deploy'
+import type { DeployStep } from '@meddleware/sui-token-client/deploy'
 import { buildDeployExecutor } from '../lib/deployExecutor.js'
 import { FEE_MIST, FEE_TREASURY, PUBLISH_GAS_BUDGET, isFeeConfigured } from '../config.js'
 import { extractErrorMessage } from '../lib/errors.js'
-import type { Network, PublishResult } from '../lib/types.js'
+import type { TokenNetwork as Network, PublishResult } from '@meddleware/sui-token-client'
 
 type Step = 'identity' | 'token' | 'settings' | 'review' | 'deploying' | 'done'
 

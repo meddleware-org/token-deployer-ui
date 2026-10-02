@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useWallet } from '@meddleware/wallet-adapter'
 import { buildDeployExecutor } from '../lib/deployExecutor.js'
-import { getReadClient } from '../lib/readClient.js'
+import { getReadClient } from '../wallet.js'
 import { useWalrusRelay } from '../composables/useWalrusRelay.js'
 import { useAccessGate } from '@meddleware/walrus-relay'
 // The flow subpath carries no wasm; it loads the Walrus client lazily when an upload starts.
@@ -10,7 +10,7 @@ import { consumeStorageKey, createGatedAccess, runBlobUpload } from '@meddleware
 import { ICON_EPOCHS } from '../lib/walrus-constants.js'
 import { ACCESS_GATE, ICON_MAX_BYTES, WALRUS_MAX_TIP_MIST, WALRUS_RPC_URLS, validateIconFile } from '../config.js'
 import type { WalrusNetwork } from '../config.js'
-import type { Network } from '../lib/types.js'
+import type { TokenNetwork as Network } from '@meddleware/sui-token-client'
 import { UiNotice, UiFieldHint, UiSegmentedControl } from '@meddleware/ui'
 import WalrusBlobBrowser from './WalrusBlobBrowser.vue'
 import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url'

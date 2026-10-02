@@ -92,8 +92,9 @@ export async function injectWallet(page, { keypair, client, chain }) {
  * not the testnet default.
  */
 export async function connectWallet(page, appNetwork = 'testnet') {
-  // "Connect Wallet" standalone, "Connect wallet" in the dashboard shell.
-  await page.getByRole('button', { name: /^Connect wallet$/i }).click()
+  // "Connect Wallet" standalone, "Connect wallet" in the dashboard shell; the page's connect prompt
+  // may show a second one. Each opens the same dialog.
+  await page.getByRole('button', { name: /^Connect wallet$/i }).first().click()
   if (appNetwork !== 'testnet') {
     await page.locator('#dialog-network-select').selectOption(appNetwork)
   }
@@ -102,6 +103,6 @@ export async function connectWallet(page, appNetwork = 'testnet') {
   // Connect button for an account control. Either signal is enough.
   await Promise.any([
     page.getByText(new RegExp(`${WALLET_NAME} ·`)).waitFor({ timeout: 10000 }),
-    page.getByRole('button', { name: /^Connect wallet$/i }).waitFor({ state: 'detached', timeout: 10000 }),
+    page.getByRole('button', { name: /^Connect wallet$/i }).first().waitFor({ state: 'detached', timeout: 10000 }),
   ])
 }

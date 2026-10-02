@@ -1,7 +1,7 @@
 // Deployment-wide configuration. Operator values (fee + treasury) are read from
 // Vite env vars so they can be set at build/deploy time without code changes.
 // See .env.example.
-import type { Network } from './lib/types.js'
+import type { TokenNetwork as Network } from '@meddleware/sui-token-client'
 import { relayGateConfig, type RelayGateConfig } from '@meddleware/walrus-relay'
 
 const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {}

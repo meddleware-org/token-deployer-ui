@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { PublishResult, TokenConfig } from '../lib/types.js'
+import type { PublishResult, TokenConfig } from '@meddleware/sui-token-client'
 import { UiNotice, safeHref } from '@meddleware/ui'
-import { buildPackageFiles } from '../lib/generatePackage.js'
+import { buildPackageFiles } from '@meddleware/sui-token-client/package'
 import { fetchLicenseText } from '../lib/licenses.js'
 import { createRepoAndPush } from '../lib/github.js'
 

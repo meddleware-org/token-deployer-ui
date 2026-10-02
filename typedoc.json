@@ -2,13 +2,8 @@
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": [
     "src/config.ts",
-    "src/lib/types.ts",
     "src/lib/validation.ts",
     "src/lib/form.ts",
-    "src/lib/template.ts",
-    "src/lib/buildPublishTx.ts",
-    "src/lib/deploy.ts",
-    "src/lib/generatePackage.ts",
     "src/lib/licenses.ts",
     "src/lib/github.ts",
     "src/lib/walrus-constants.ts",

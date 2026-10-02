@@ -142,7 +142,7 @@ async function main() {
   const coinType = await page.locator('dd.mono').first().innerText()
   console.log('UI result coinType:', coinType)
 
-  // Verify the in-browser source-package download (generatePackage + zip + SPDX license fetch).
+  // Verify the in-browser source-package download (the client's ./package zip + SPDX licence fetch).
   const [download] = await Promise.all([
     page.waitForEvent('download', { timeout: 30000 }),
     page.getByRole('button', { name: /Download source package/ }).click(),

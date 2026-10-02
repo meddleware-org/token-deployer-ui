@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TokenConfig, Network } from '../lib/types.js'
+import type { TokenConfig, TokenNetwork as Network } from '@meddleware/sui-token-client'
 import { FEE_MIST, FEE_TREASURY, isFeeConfigured } from '../config.js'
 import { UiNotice } from '@meddleware/ui'
 

@@ -9,8 +9,9 @@ import {
   suiExplorerUrl,
   type SuiNetwork,
 } from '@meddleware/ui'
-import { listMyTokens, type DeployedToken } from '../lib/listMyTokens.js'
-import type { Network } from '../lib/types.js'
+import { listMyTokens, type DeployedToken } from '@meddleware/sui-token-client'
+import { getReadClient } from '../wallet.js'
+import type { TokenNetwork as Network } from '@meddleware/sui-token-client'
 
 const props = defineProps<{ owner: string | null; network: Network }>()
 
@@ -18,9 +19,6 @@ const props = defineProps<{ owner: string | null; network: Network }>()
 const explorerNetwork = computed<SuiNetwork | null>(() =>
   props.network === 'localnet' ? null : props.network,
 )
-function objectHref(id: string): string | null {
-  return explorerNetwork.value ? suiExplorerUrl('object', id, explorerNetwork.value) : null
-}
 
 const tokens = ref<DeployedToken[]>([])
 const loading = ref(false)
@@ -34,7 +32,7 @@ async function load(): Promise<void> {
   loading.value = true
   error.value = null
   try {
-    tokens.value = await listMyTokens(props.owner, props.network)
+    tokens.value = await listMyTokens(getReadClient(props.network), props.owner)
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e)
     tokens.value = []
@@ -64,8 +62,8 @@ defineExpose({ reload: load })
           <dd>
             <CopyableAddress :address="t.packageId" label="Copy package id">
               <ExplorerLink
-                v-if="objectHref(t.packageId)"
-                :href="objectHref(t.packageId)!"
+                v-if="explorerNetwork"
+                :href="suiExplorerUrl('object', t.packageId, explorerNetwork)"
                 :value="t.packageId"
               />
             </CopyableAddress>
@@ -74,8 +72,8 @@ defineExpose({ reload: load })
           <dd>
             <CopyableAddress :address="t.treasuryCapId" label="Copy treasury cap id">
               <ExplorerLink
-                v-if="objectHref(t.treasuryCapId)"
-                :href="objectHref(t.treasuryCapId)!"
+                v-if="explorerNetwork"
+                :href="suiExplorerUrl('object', t.treasuryCapId, explorerNetwork)"
                 :value="t.treasuryCapId"
               />
             </CopyableAddress>

@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useWallet, useNetwork } from '@meddleware/wallet-adapter'
 import { SELECTABLE_NETWORKS } from '../config.js'
-import type { Network } from '../lib/types.js'
+import type { TokenNetwork as Network } from '@meddleware/sui-token-client'
 
 /** Wallet-supplied icons are untrusted: render only inline images or https URLs. */
 function safeIcon(icon: string | undefined): string | undefined {

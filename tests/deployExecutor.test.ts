@@ -7,7 +7,7 @@ const { buildExecutor, readClient } = vi.hoisted(() => ({
   readClient: { __client: 'testnet' },
 }))
 vi.mock('@meddleware/wallet-adapter', () => ({ buildExecutor }))
-vi.mock('../src/lib/readClient.js', () => ({ getReadClient: () => readClient }))
+vi.mock('../src/wallet.js', () => ({ getReadClient: () => readClient }))
 
 import { buildDeployExecutor } from '../src/lib/deployExecutor.js'
 import { RPC_URLS } from '../src/config.js'

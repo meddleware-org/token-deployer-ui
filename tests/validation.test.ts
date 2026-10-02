@@ -1,13 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import {
-  validateForm,
-  deriveStructName,
-  parseSupply,
-  isValid,
-  validateIdentifier,
-  hasAllowedIconScheme,
-  MAX_IDENT_LEN,
-} from '../src/lib/validation.js'
+import { hasAllowedIconScheme, TOKEN_LIMITS } from '@meddleware/sui-token-client'
+import { validateForm, deriveStructName, isValid } from '../src/lib/validation.js'
+
+const MAX_IDENT_LEN = TOKEN_LIMITS.identifier
 
 const good = {
   packageName: 'my_token',
@@ -95,23 +90,5 @@ describe('iconUrl scheme allowlist', () => {
     expect(validateForm({ ...good, iconUrl: 'data:image/png;base64,AAAA' }).iconUrl).toBeTruthy()
     expect(validateForm({ ...good, iconUrl: 'http://x.io/a.png' }).iconUrl).toBeTruthy()
     expect(hasAllowedIconScheme('javascript:alert(1)')).toBe(false)
-  })
-})
-
-describe('validateIdentifier', () => {
-  it('accepts a valid identifier and rejects shape/keyword/length violations', () => {
-    expect(validateIdentifier('my_token')).toBeNull()
-    expect(validateIdentifier('My-Token')).toBeTruthy()
-    expect(validateIdentifier('const')).toBeTruthy()
-    expect(validateIdentifier('a'.repeat(MAX_IDENT_LEN + 1))).toBeTruthy()
-  })
-})
-
-describe('parseSupply', () => {
-  it('parses whole numbers and blank', () => {
-    expect(parseSupply('')).toBe(0n)
-    expect(parseSupply('  42 ')).toBe(42n)
-    expect(parseSupply('1.5')).toBeNull()
-    expect(parseSupply('-1')).toBeNull()
   })
 })

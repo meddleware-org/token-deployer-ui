@@ -1,7 +1,7 @@
 // The reactive form model (all text inputs are strings) and its conversion into
 // the strongly-typed TokenConfig used by the deploy + generate pipelines.
 
-import type { MetadataPolicy, PackagePolicy, SupplyPolicy, TokenConfig } from './types.js'
+import type { MetadataPolicy, PackagePolicy, SupplyPolicy, TokenConfig } from '@meddleware/sui-token-client'
 import { deriveStructName, parseSupply } from './validation.js'
 import { DEFAULT_LICENSE_ID } from './licenses.js'
 

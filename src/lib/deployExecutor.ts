@@ -5,10 +5,9 @@
 
 import { buildExecutor } from '@meddleware/wallet-adapter'
 import type { Transaction } from '@mysten/sui/transactions'
-import { toSuiTxResult } from './deploy.js'
-import type { SuiTxResult, Executor } from './deploy.js'
-import type { Network } from './types.js'
-import { getReadClient } from './readClient.js'
+import { toSuiTxResult, type Executor, type SuiTxResult } from '@meddleware/sui-token-client/deploy'
+import type { TokenNetwork as Network } from '@meddleware/sui-token-client'
+import { getReadClient } from '../wallet.js'
 import { RPC_URLS } from '../config.js'
 
 /**

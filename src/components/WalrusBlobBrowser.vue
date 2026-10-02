@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useWallet } from '@meddleware/wallet-adapter'
-import { getReadClient } from '../lib/readClient.js'
+import { getReadClient } from '../wallet.js'
 import type { OwnedBlob } from '@meddleware/walrus-client'
 import { WALRUS_RPC_URLS, type WalrusNetwork } from '../config.js'
-import type { Network } from '../lib/types.js'
-import { UiNotice } from '@meddleware/ui'
+import type { TokenNetwork as Network } from '@meddleware/sui-token-client'
+import { UiNotice, safeHref } from '@meddleware/ui'
 
 const props = defineProps<{ network: WalrusNetwork; connected: boolean }>()
 const emit = defineEmits<{ (e: 'select', url: string): void }>()
@@ -104,7 +104,7 @@ function selectBlob(item: BlobItem): void {
           @click="selectBlob(b)"
         >
           <img
-            :src="b.url"
+            :src="safeHref(b.url)"
             :alt="`Blob ${b.blobId.slice(0, 8)}…`"
             loading="lazy"
             @error="(e) => (e.target as HTMLElement).parentElement?.classList.add('no-img')"
