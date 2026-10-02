@@ -167,7 +167,8 @@ The Playwright mocked suite (`npm run test:e2e`) mocks all RPC in a dedicated e2
 (`npm run build:e2e`, `--mode e2e`; production builds refuse `VITE_E2E`), so it can prove
 the form/wallet/publish UI but **not** on-chain confirmation, the result panel, or the source
 download. The real-chain harness fills that gap. It is **manual** — never wired into automatic CI — because testnet/mainnet runs
-publish a real token and spend real SUI.
+publish a real token and spend real SUI. The `e2e-realchain.yml` workflow runs testnet only; mainnet
+runs only from your own machine, so no mainnet key is ever stored in CI.
 
 ```bash
 npm run e2e:localnet   # fresh keypair, localnet faucet — no real funds; run this freely

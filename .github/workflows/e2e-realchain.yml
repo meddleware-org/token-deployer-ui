@@ -1,15 +1,17 @@
-# Real-chain e2e for token-deployer-ui.
+# Real-chain e2e for token-deployer-ui — TESTNET ONLY.
 #
-# MANUAL ONLY (workflow_dispatch). These runs publish a REAL token / store a REAL blob and spend
-# REAL SUI (and WAL), so they never run on push or pull_request. The job runs in the protected
-# `realchain` environment (configure required reviewers in the repository settings), and mainnet
-# additionally requires the explicit confirmation input. The automatic gates stay in node-ci.yml
+# MANUAL ONLY (workflow_dispatch). These runs publish a REAL testnet token / store a REAL testnet blob
+# and spend testnet SUI (and WAL), so they never run on push or pull_request. The job runs in the
+# `realchain` environment (deployments from `main` only). The automatic gates stay in node-ci.yml
 # (`npm test` + the mocked Playwright suite).
 #
+# Mainnet is deliberately not offered here: no mainnet key is ever stored in CI. A mainnet run is
+# done from the maintainer's machine with `E2E_MAINNET_CONFIRM=1 npm run e2e:mainnet` (README).
+#
 # Secrets (environment `realchain`):
-#   SUI_PRIV_TESTNET / SUI_PRIV_MAINNET  — bech32 suiprivkey1… for a funded, minimally funded key.
-#   FEE_TREASURY_TESTNET / FEE_TREASURY_MAINNET — operator treasury address (fee recipient).
-#   RPC_TESTNET / RPC_MAINNET (optional) — gRPC endpoint override (defaults to the public fullnodes).
+#   SUI_PRIV_TESTNET     — bech32 suiprivkey1… for a minimally funded testnet key.
+#   FEE_TREASURY_TESTNET — operator treasury address (fee recipient).
+#   RPC_TESTNET (optional) — gRPC endpoint override (defaults to the public fullnode).
 
 name: token-deployer real-chain e2e
 
@@ -17,25 +19,13 @@ on:
   workflow_dispatch:
     inputs:
       suite:
-        description: Harness to run (walrus = icon upload through the public relay; testnet only)
+        description: Harness to run on testnet (walrus = icon upload through the public relay)
         required: true
         default: deploy
         type: choice
         options:
           - deploy
           - walrus
-      network:
-        description: Target network (mainnet publishes a REAL token and spends REAL SUI)
-        required: true
-        default: testnet
-        type: choice
-        options:
-          - testnet
-          - mainnet
-      confirm_mainnet:
-        description: Type "1" to confirm a mainnet run (ignored for testnet)
-        required: false
-        default: ""
 
 permissions:
   contents: read
@@ -61,29 +51,17 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Refuse walrus suite on mainnet
-        if: inputs.suite == 'walrus' && inputs.network != 'testnet'
-        run: |
-          echo "::error::The walrus harness targets testnet only."
-          exit 1
-
-      - name: Run real-chain e2e
+      - name: Run real-chain e2e (testnet)
         env:
-          # Select the funded key + treasury + RPC for the chosen network.
-          SUI_PRIV: ${{ inputs.network == 'mainnet' && secrets.SUI_PRIV_MAINNET || secrets.SUI_PRIV_TESTNET }}
+          SUI_PRIV: ${{ secrets.SUI_PRIV_TESTNET }}
           VITE_FEE_TREASURY_TESTNET: ${{ secrets.FEE_TREASURY_TESTNET }}
-          VITE_FEE_TREASURY_MAINNET: ${{ secrets.FEE_TREASURY_MAINNET }}
           VITE_RPC_TESTNET: ${{ secrets.RPC_TESTNET }}
-          VITE_RPC_MAINNET: ${{ secrets.RPC_MAINNET }}
-          E2E_RPC: ${{ inputs.network == 'mainnet' && secrets.RPC_MAINNET || secrets.RPC_TESTNET }}
-          E2E_FEE_ADDR: ${{ inputs.network == 'mainnet' && secrets.FEE_TREASURY_MAINNET || secrets.FEE_TREASURY_TESTNET }}
-          # Mainnet fail-safe: only proceeds when the operator typed "1" (a skipped run exits 78).
-          E2E_MAINNET_CONFIRM: ${{ inputs.network == 'mainnet' && inputs.confirm_mainnet || '' }}
+          E2E_RPC: ${{ secrets.RPC_TESTNET }}
+          E2E_FEE_ADDR: ${{ secrets.FEE_TREASURY_TESTNET }}
           SUITE: ${{ inputs.suite }}
-          NETWORK: ${{ inputs.network }}
         run: |
           if [ "$SUITE" = walrus ]; then
             npm run e2e:walrus
           else
-            npm run "e2e:${NETWORK}"
+            npm run e2e:testnet
           fi

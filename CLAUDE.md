@@ -197,8 +197,10 @@ Three distinct categories — do not collapse them (repo convention):
   [scripts/e2e-wallet.mjs](scripts/e2e-wallet.mjs): the injected wallet forwards transaction JSON
   and node rebuilds + signs it with its own client (plus `sui:signPersonalMessage`), so they run
   against the ordinary production build with no app test hooks. Testnet/mainnet are **manual only** — never in automatic CI (see the README launch runbook). The
-  `.github/workflows/e2e-realchain.yml` (`workflow_dispatch`, `suite` = deploy or walrus, protected
-  `realchain` environment) is the gated manual runner; a skipped mainnet run exits 78.
+  `.github/workflows/e2e-realchain.yml` (`workflow_dispatch`, `suite` = deploy or walrus, the
+  `realchain` environment limited to `main`) is the gated manual runner, **testnet only**: no
+  mainnet key is ever stored in CI. Mainnet runs are local (`E2E_MAINNET_CONFIRM=1 npm run
+  e2e:mainnet`); a skipped mainnet run exits 78.
 
 ## Docs
 
