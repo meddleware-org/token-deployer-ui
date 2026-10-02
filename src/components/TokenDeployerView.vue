@@ -21,6 +21,7 @@ import { emptyForm, toTokenConfig } from '../lib/form.js'
 import { validateForm } from '../lib/validation.js'
 import type { FormErrors } from '../lib/validation.js'
 import { useDeploy } from '../composables/useDeploy.js'
+import { browserStorage } from '@meddleware/walrus-client/flow'
 import { FEE_MIST, FEE_TREASURY, PUBLISH_GAS_BUDGET, isFeeConfigured } from '../config.js'
 import type { TokenNetwork as Network } from '@meddleware/sui-token-client'
 
@@ -64,7 +65,9 @@ watch(flow.phase, (phase) => {
   else if (phase === 'published') step.value = 'published'
   else if (phase === 'failed') step.value = 'review'
 })
-const termsAccepted = ref(localStorage.getItem('sui-deployer:terms-accepted') === '1')
+// Storage that never throws: with site data blocked the terms are simply asked again next visit.
+const storage = browserStorage()
+const termsAccepted = ref(storage.getItem('sui-deployer:terms-accepted') === '1')
 const showTerms = ref(false)
 
 const errors = computed(() => validateForm(form))
@@ -156,7 +159,7 @@ function goBack(): void {
 }
 
 function onTermsAccept(): void {
-  localStorage.setItem('sui-deployer:terms-accepted', '1')
+  storage.setItem('sui-deployer:terms-accepted', '1')
   termsAccepted.value = true
   showTerms.value = false
   step.value = 'review'

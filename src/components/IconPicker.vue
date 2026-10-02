@@ -6,7 +6,7 @@ import { getReadClient } from '../wallet.js'
 import { useWalrusRelay } from '../composables/useWalrusRelay.js'
 import { useAccessGate } from '@meddleware/walrus-relay'
 // The flow subpath carries no wasm; it loads the Walrus client lazily when an upload starts.
-import { consumeStorageKey, createGatedAccess, runBlobUpload } from '@meddleware/walrus-client/flow'
+import { browserStorage, consumeStorageKey, createGatedAccess, runBlobUpload } from '@meddleware/walrus-client/flow'
 import { ICON_EPOCHS } from '../lib/walrus-constants.js'
 import { ACCESS_GATE, ICON_MAX_BYTES, WALRUS_MAX_TIP_MIST, WALRUS_RPC_URLS, validateIconFile } from '../config.js'
 import type { WalrusNetwork } from '../config.js'
@@ -157,7 +157,7 @@ async function upload(): Promise<void> {
     const access =
       gated && gate && nftId
         ? createGatedAccess({
-            storage: window.localStorage,
+            storage: browserStorage(),
             key: consumeStorageKey(walrusNet, gate.gateId, address),
             relayHost: selectedRelayHost.value,
             address,
