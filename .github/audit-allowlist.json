@@ -1,0 +1,8 @@
+[
+  {
+    "id": "GHSA-vfj7-8cjw-p6xm",
+    "package": "braces",
+    "reason": "Stack-exhaustion DoS on attacker-supplied glob patterns; no patched release. Reached only through dev tooling (micromatch via fast-glob in stylelint and @vue/eslint-config-typescript) with repository-controlled patterns; npm audit --omit=dev is clean.",
+    "expires": "2027-01-01"
+  }
+]
