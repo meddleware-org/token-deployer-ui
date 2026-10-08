@@ -12,6 +12,7 @@ import {
 } from '@meddleware/sui-token-client/deploy'
 import type { PublishResult, TokenNetwork } from '@meddleware/sui-token-client'
 import { buildDeployExecutor } from '../lib/deployExecutor.js'
+import { getReadClient } from '../wallet.js'
 import { extractErrorMessage } from '../lib/errors.js'
 
 /**
@@ -83,6 +84,8 @@ export function useDeploy(executorFor: (network: TokenNetwork) => Promise<Execut
       result.value = await finalizeToken({
         pending: p,
         executor: await executorFor(p.result.network),
+        // So a retry after an executor error that may have landed checks the supply first.
+        client: getReadClient(p.result.network),
         onStep: (s) => (step.value = s),
       })
       pending.value = null
