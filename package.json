@@ -1,6 +1,6 @@
 {
   "name": "@meddleware/token-deployer-ui",
-  "version": "0.0.25",
+  "version": "0.0.26",
   "type": "module",
   "license": "0BSD",
   "repository": {
@@ -51,10 +51,10 @@
     "@meddleware/design-tokens": "^0.1.8",
     "@meddleware/sui-token-client": "^0.0.5",
     "@meddleware/ui": "^0.1.30",
-    "@meddleware/walrus-client": "^0.0.25",
-    "@meddleware/walrus-relay": "^0.1.26",
+    "@meddleware/walrus-client": "^0.0.26",
+    "@meddleware/walrus-relay": "^0.1.28",
     "@mysten/move-bytecode-template": "~0.4.1",
-    "@mysten/sui": "^2.33.1",
+    "@mysten/sui": "^2.33.2",
     "@mysten/walrus": "~1.2.32",
     "vue": "^3.5.0"
   },
@@ -62,7 +62,7 @@
     "@meddleware/wallet-adapter": ">=0.0.12 <0.2.0"
   },
   "devDependencies": {
-    "@meddleware/access-gate-client": "^0.0.4",
+    "@meddleware/access-gate-client": "^0.0.6",
     "@meddleware/eslint-config": "^0.0.1",
     "@meddleware/wallet-adapter": "^0.0.13",
     "@playwright/test": "^1.56.0",

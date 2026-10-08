@@ -6,7 +6,8 @@ import { getReadClient } from '../wallet.js'
 import { useWalrusRelay } from '../composables/useWalrusRelay.js'
 import { useAccessGate } from '@meddleware/walrus-relay'
 // The flow subpath carries no wasm; it loads the Walrus client lazily when an upload starts.
-import { browserStorage, consumeStorageKey, createGatedAccess, runBlobUpload } from '@meddleware/walrus-client/flow'
+import { browserStorage, consumeStorageKey, createGatedAccess, getUploadRetry, runBlobUpload } from '@meddleware/walrus-client/flow'
+import { normalizeSuiAddress } from '@mysten/sui/utils'
 import { ICON_EPOCHS } from '../lib/walrus-constants.js'
 import { ACCESS_GATE, ICON_MAX_BYTES, WALRUS_MAX_TIP_MIST, WALRUS_RPC_URLS, validateIconFile } from '../config.js'
 import type { WalrusNetwork } from '../config.js'
@@ -80,6 +81,9 @@ const tab = ref('url')
 const uploading = ref(false)
 const status = ref('')
 const uploadError = ref<string | null>(null)
+// Set when the relay upload failed after the icon was registered (and paid for): retries on it.
+const retryUpload = ref<(() => Promise<{ url: string }>) | null>(null)
+const retrying = ref(false)
 const fileName = ref('')
 let bytes: Uint8Array | null = null
 
@@ -131,6 +135,26 @@ function onRelayChange(newHost: string): void {
   selectedRelayHost.value = newHost
 }
 
+async function retryUploadOnRegistration(): Promise<void> {
+  const retry = retryUpload.value
+  if (!retry || retrying.value) return
+  retrying.value = true
+  uploadError.value = null
+  try {
+    const result = await retry()
+    emit('update:modelValue', result.url)
+    tab.value = 'url'
+    status.value = 'Uploaded ✓ — URL filled in above.'
+    retryUpload.value = null
+  } catch (e) {
+    uploadError.value = e instanceof Error ? e.message : String(e)
+    retryUpload.value = getUploadRetry<{ url: string }>(e)
+  } finally {
+    retrying.value = false
+    if (account.value) void refreshAccess()
+  }
+}
+
 async function upload(): Promise<void> {
   if (!bytes) {
     uploadError.value = 'Choose an image first.'
@@ -161,8 +185,10 @@ async function upload(): Promise<void> {
             key: consumeStorageKey(walrusNet, gate.gateId, address),
             relayHost: selectedRelayHost.value,
             address,
+            gateId: normalizeSuiAddress(gate.gateId),
+            network: walrusNet,
             nftId,
-            singleUse: accessGate.usesRemaining.value !== null,
+            singleUse: accessGate.singleUse.value,
             buildConsume: (id, nonce) => accessGate.buildConsume(id, nonce),
             signAndExecute: (tx) => executor.signAndExecute(tx),
             waitForTransaction: (digest) => executor.waitForTransaction(digest),
@@ -189,8 +215,10 @@ async function upload(): Promise<void> {
     emit('update:modelValue', result.url)
     tab.value = 'url'
     status.value = 'Uploaded ✓ — URL filled in above.'
+    retryUpload.value = null
   } catch (e) {
     uploadError.value = e instanceof Error ? e.message : String(e)
+    retryUpload.value = getUploadRetry<{ url: string }>(e)
     status.value = ''
   } finally {
     uploading.value = false
@@ -338,6 +366,10 @@ function onBrowseSelect(url: string): void {
         years. <span v-if="status">{{ status }}</span>
       </p>
       <UiNotice v-if="uploadError" type="error">{{ uploadError }}</UiNotice>
+      <p v-if="retryUpload" class="upload-note">
+        The icon is registered and paid for. <button type="button" :disabled="retrying" @click="retryUploadOnRegistration">{{ retrying ? 'Retrying…' : 'Retry upload' }}</button>
+        (no second payment).
+      </p>
     </div>
 
     <!-- Browse panel -->
