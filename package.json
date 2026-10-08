@@ -63,6 +63,7 @@
   },
   "devDependencies": {
     "@meddleware/access-gate-client": "^0.0.4",
+    "@meddleware/eslint-config": "^0.0.1",
     "@meddleware/wallet-adapter": "^0.0.13",
     "@playwright/test": "^1.56.0",
     "@types/node": "~24.12.2",
