@@ -59,6 +59,10 @@ async function downloadPackage(): Promise<void> {
       <dd v-if="result.treasuryCapId" class="mono">{{ result.treasuryCapId }}</dd>
       <dt v-if="result.metadataCapId">MetadataCap</dt>
       <dd v-if="result.metadataCapId" class="mono">{{ result.metadataCapId }}</dd>
+      <dt v-if="!result.treasuryCapId">Supply</dt>
+      <dd v-if="!result.treasuryCapId">Fixed — recorded in the coin registry (no TreasuryCap exists)</dd>
+      <dt v-if="!result.metadataCapId">Metadata</dt>
+      <dd v-if="!result.metadataCapId">Frozen — recorded in the coin registry (no MetadataCap exists)</dd>
       <dt>Package code</dt>
       <dd>{{ result.upgradeCapId ? 'Upgradeable' : 'Immutable (UpgradeCap burned)' }}</dd>
     </dl>

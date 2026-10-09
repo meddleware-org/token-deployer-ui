@@ -34,6 +34,7 @@ useSeason()
     const packageId = '0x' + 'bb'.repeat(32)
     const treasuryCapId = '0x' + 'cc'.repeat(32)
     const metadataCapId = '0x' + 'dd'.repeat(32)
+    const currencyId = '0x' + 'ee'.repeat(32)
     const created = (objectId: string) => ({
       objectId,
       outputState: 'ObjectWrite',
@@ -51,11 +52,13 @@ useSeason()
             { objectId: packageId, outputState: 'PackageWrite', idOperation: 'Created' },
             created(treasuryCapId),
             created(metadataCapId),
+            created(currencyId),
           ],
         },
         objectTypes: {
           [treasuryCapId]: `0x2::coin::TreasuryCap<${packageId}::mytoken::MYTOKEN>`,
           [metadataCapId]: `0x2::coin_registry::MetadataCap<${packageId}::mytoken::MYTOKEN>`,
+          [currencyId]: `0x2::coin_registry::Currency<${packageId}::mytoken::MYTOKEN>`,
         },
       },
     }

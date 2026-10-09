@@ -190,10 +190,10 @@ function onBlur(key: string): void {
         <UiFormField id="supply" label="Initial supply" :error="visibleError('initialSupply')">
           <template #label-suffix>
             <UiFieldHint field-id="supply">
-              The number of whole tokens to mint and send to the recipient at deployment. Uses your
-              chosen decimal precision — with 9 decimals, 1 token = 1,000,000,000 base units
+              The number of whole tokens minted when the coin is created and sent to the recipient.
+              Uses your chosen decimal precision — with 9 decimals, 1 token = 1,000,000,000 base units
               on-chain. Enter <b>0</b> or leave blank for no initial supply. You can mint more later
-              if you choose the Mintable supply policy.
+              if you choose the Mintable supply policy; a Fixed supply needs an amount above zero.
             </UiFieldHint>
           </template>
           <template #default="{ attrs }">
@@ -213,7 +213,8 @@ function onBlur(key: string): void {
             <template #label-suffix>
               <UiFieldHint field-id="supply-policy">
                 <b>Mintable</b>: you keep the TreasuryCap and can mint more tokens at any time.<br />
-                <b>Fixed</b>: the TreasuryCap is frozen — the total supply is sealed at deployment.
+                <b>Fixed</b>: the whole supply is minted when the coin is created and the coin registry
+                takes the TreasuryCap — nobody can ever mint more, and wallets can see that.
               </UiFieldHint>
             </template>
             <template #default="{ attrs }">
@@ -228,7 +229,8 @@ function onBlur(key: string): void {
               <UiFieldHint field-id="metadata-policy">
                 <b>Updatable</b>: you keep the MetadataCap and can later change the name, symbol,
                 description, or icon.<br />
-                <b>Frozen</b>: the MetadataCap is discarded — all metadata is permanently locked.
+                <b>Frozen</b>: the MetadataCap is deleted when the coin is created — all metadata is
+                permanently locked, and wallets can see that.
               </UiFieldHint>
             </template>
             <template #default="{ attrs }">

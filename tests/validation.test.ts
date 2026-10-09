@@ -53,6 +53,11 @@ describe('validateForm', () => {
     expect(validateForm({ ...good, initialSupply: '99999999999999', decimals: 18 }).initialSupply).toBeTruthy()
     expect(validateForm({ ...good, initialSupply: 'abc' }).initialSupply).toBeTruthy()
     expect(validateForm({ ...good, initialSupply: '' }).initialSupply).toBeUndefined()
+    // A fixed supply must be minted at publish: the framework refuses to fix an empty one.
+    expect(validateForm({ ...good, initialSupply: '', supplyPolicy: 'fixed' }).initialSupply).toMatch(/above zero/)
+    expect(validateForm({ ...good, initialSupply: '0', supplyPolicy: 'fixed' }).initialSupply).toMatch(/above zero/)
+    expect(validateForm({ ...good, initialSupply: '5', supplyPolicy: 'fixed' }).initialSupply).toBeUndefined()
+    expect(validateForm({ ...good, initialSupply: '', supplyPolicy: 'mintable' }).initialSupply).toBeUndefined()
   })
 
   it('validates an optional recipient address', () => {

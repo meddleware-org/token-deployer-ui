@@ -57,10 +57,12 @@ The token logic lives in [`@meddleware/sui-token-client`](https://github.com/med
 | Read client (wallet-adapter `getSuiClient`, E2E stub via `setReadClient`) | [src/wallet.ts](src/wallet.ts) |
 | Wallet executor | [src/lib/deployExecutor.ts](src/lib/deployExecutor.ts) |
 
-- **Two-phase publish** — TreasuryCap/MetadataCap are created in `init()` and sent to the sender, so
-  they are not `tx.publish` results. The publish PTB = publish + UpgradeCap policy + fee split from
-  gas; a finalize PTB always follows (`coin_registry::finalize_registration`, then supply and
-  metadata policies).
+- **Two-phase publish** — `init()` creates the coin's objects and sends them to the sender, so they
+  are not `tx.publish` results. `init` also applies the initial supply and the supply and metadata
+  policies (patched constants), so the registry records a fixed supply and a deleted MetadataCap and
+  no cap exists to freeze. The publish PTB = publish + UpgradeCap policy + fee split from gas; a
+  finalize PTB always follows (`coin_registry::finalize_registration`, then the objects to the
+  recipient). A fixed supply needs an initial supply above zero (form validation + the client).
 
 ## Invariants (do not break)
 

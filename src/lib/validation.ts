@@ -29,6 +29,8 @@ export interface ValidatableForm {
   iconUrl: string
   decimals: number | string
   initialSupply: string
+  /** When 'fixed', an initial supply above zero is required (the framework refuses to fix an empty supply). */
+  supplyPolicy?: 'mintable' | 'fixed'
   recipient: string
 }
 
@@ -70,6 +72,8 @@ export function validateForm(form: ValidatableForm): FormErrors {
     errors.initialSupply = 'Enter a whole number, or leave blank for none'
   } else if (isValidDecimals(decimals) && supply * 10n ** BigInt(decimals) > MAX_U64) {
     errors.initialSupply = 'Supply exceeds the maximum for this decimal precision'
+  } else if (form.supplyPolicy === 'fixed' && supply === 0n) {
+    errors.initialSupply = 'A fixed supply needs an initial supply above zero'
   }
 
   if (form.recipient && !SUI_ADDRESS.test(form.recipient)) {
