@@ -89,7 +89,7 @@ RUN npm run build && npm run check:bundle
 # static-server is a minimal Go binary image — no shell, no package manager.
 # SPA_FALLBACK serves index.html for any extensionless path (Vue Router history mode).
 # CACHE_IMMUTABLE_PREFIX matches the /assets/ directory Vite emits with content hashes.
-FROM quay.io/meddleware-org/static-server:0.1.3@sha256:664e1c460b4558e20bf3f1b6b2a7ef5e914392edc0a4a125867d6fa822ff92e5
+FROM quay.io/meddleware-org/static-server:0.1.6@sha256:be51c4ee9c80fbbeda1f546efa918a72628388bd0fac0f52876e8234b51275c0
 ARG CSP
 ENV CONTENT_SECURITY_POLICY="${CSP}"
 
