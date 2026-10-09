@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// Lists the coins the connected wallet has deployed (owned TreasuryCap<T> objects). Read-only,
+// Lists the coins the connected wallet deployed or controls (an owned TreasuryCap<T> or MetadataCap<T>, or a
+// held coin whose package the wallet published — a fixed supply with frozen metadata has no capability). Read-only,
 // mirroring access-gate's "My Gates". Loads on mount and whenever the address or network changes.
 import { computed, ref, watch } from 'vue'
 import {
@@ -62,7 +63,7 @@ defineExpose({ reload: load })
       No deployed tokens found for this wallet. Deploy one from the <strong>Deploy</strong> tab.
     </p>
     <ul v-else class="my-tokens__list">
-      <li v-for="t in tokens" :key="t.treasuryCapId" class="my-tokens__item">
+      <li v-for="t in tokens" :key="t.coinType" class="my-tokens__item">
         <div class="my-tokens__label">{{ t.label }}</div>
         <dl class="my-tokens__meta">
           <dt>Coin type</dt>
@@ -78,7 +79,7 @@ defineExpose({ reload: load })
             </CopyableAddress>
           </dd>
           <dt>Treasury cap</dt>
-          <dd>
+          <dd v-if="t.treasuryCapId">
             <CopyableAddress :address="t.treasuryCapId" label="Copy treasury cap id">
               <ExplorerLink
                 v-if="explorerNetwork"
@@ -87,6 +88,18 @@ defineExpose({ reload: load })
               />
             </CopyableAddress>
           </dd>
+          <dd v-else>None — the supply is fixed, or the cap is held elsewhere</dd>
+          <dt>Metadata cap</dt>
+          <dd v-if="t.metadataCapId">
+            <CopyableAddress :address="t.metadataCapId" label="Copy metadata cap id">
+              <ExplorerLink
+                v-if="explorerNetwork"
+                :href="suiExplorerUrl('object', t.metadataCapId, explorerNetwork)"
+                :value="t.metadataCapId"
+              />
+            </CopyableAddress>
+          </dd>
+          <dd v-else>None — the metadata is frozen, or the cap is held elsewhere</dd>
         </dl>
       </li>
     </ul>

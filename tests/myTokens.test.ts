@@ -64,4 +64,21 @@ describe('MyTokens', () => {
     await flushPromises()
     expect(w.text()).not.toContain('0x1::tst::TST')
   })
+
+  it('shows a coin with no capability (fixed supply, frozen metadata) with both caps marked absent', async () => {
+    listMyTokens.mockResolvedValue([{ coinType: '0x1::fixed::FIXED', packageId: '0x1', label: 'FIXED' }])
+    const w = mount(MyTokens, { props: { owner: '0xabc', network: 'testnet' } })
+    await flushPromises()
+    expect(w.text()).toContain('0x1::fixed::FIXED')
+    expect(w.text()).toMatch(/Treasury cap\s*None — the supply is fixed/)
+    expect(w.text()).toMatch(/Metadata cap\s*None — the metadata is frozen/)
+  })
+
+  it('shows the metadata cap of a coin whose treasury cap went elsewhere', async () => {
+    listMyTokens.mockResolvedValue([{ coinType: '0x1::m::M', packageId: '0x1', metadataCapId: '0xbeef', label: 'M' }])
+    const w = mount(MyTokens, { props: { owner: '0xabc', network: 'testnet' } })
+    await flushPromises()
+    expect(w.text()).toContain('0xbeef')
+    expect(w.text()).toMatch(/Treasury cap\s*None/)
+  })
 })
