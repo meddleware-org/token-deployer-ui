@@ -58,7 +58,7 @@ function onBlur(key: string): void {
             <template #default="{ attrs }">
               <input
                 type="text"
-                v-bind="attrs"
+                :id="attrs.id" :aria-invalid="attrs['aria-invalid']" :aria-describedby="attrs['aria-describedby']"
                 v-model="form.packageName"
                 placeholder="my_token"
                 autocomplete="off"
@@ -76,7 +76,7 @@ function onBlur(key: string): void {
             <template #default="{ attrs }">
               <input
                 type="text"
-                v-bind="attrs"
+                :id="attrs.id" :aria-invalid="attrs['aria-invalid']" :aria-describedby="attrs['aria-describedby']"
                 v-model="form.moduleName"
                 placeholder="mytoken"
                 autocomplete="off"
@@ -114,7 +114,7 @@ function onBlur(key: string): void {
             <template #default="{ attrs }">
               <input
                 type="text"
-                v-bind="attrs"
+                :id="attrs.id" :aria-invalid="attrs['aria-invalid']" :aria-describedby="attrs['aria-describedby']"
                 v-model="form.name"
                 autocomplete="off"
                 @blur="onBlur('name')"
@@ -131,7 +131,7 @@ function onBlur(key: string): void {
             <template #default="{ attrs }">
               <input
                 type="text"
-                v-bind="attrs"
+                :id="attrs.id" :aria-invalid="attrs['aria-invalid']" :aria-describedby="attrs['aria-describedby']"
                 v-model="form.symbol"
                 autocomplete="off"
                 @blur="onBlur('symbol')"
@@ -149,7 +149,7 @@ function onBlur(key: string): void {
             </UiFieldHint>
           </template>
           <template #default="{ attrs }">
-            <textarea v-bind="attrs" v-model="form.description" @blur="onBlur('description')" />
+            <textarea :id="attrs.id" :aria-invalid="attrs['aria-invalid']" :aria-describedby="attrs['aria-describedby']" v-model="form.description" @blur="onBlur('description')" />
           </template>
         </UiFormField>
 
@@ -164,7 +164,7 @@ function onBlur(key: string): void {
           <template #default="{ attrs }">
             <input
               type="text"
-              v-bind="attrs"
+              :id="attrs.id" :aria-invalid="attrs['aria-invalid']" :aria-describedby="attrs['aria-describedby']"
               v-model="form.decimals"
               inputmode="numeric"
               @blur="onBlur('decimals')"
@@ -199,7 +199,7 @@ function onBlur(key: string): void {
           <template #default="{ attrs }">
             <input
               type="text"
-              v-bind="attrs"
+              :id="attrs.id" :aria-invalid="attrs['aria-invalid']" :aria-describedby="attrs['aria-describedby']"
               v-model="form.initialSupply"
               inputmode="numeric"
               placeholder="0"
@@ -217,7 +217,7 @@ function onBlur(key: string): void {
               </UiFieldHint>
             </template>
             <template #default="{ attrs }">
-              <UiSelect v-bind="attrs" v-model="form.supplyPolicy">
+              <UiSelect :id="attrs.id" :aria-invalid="attrs['aria-invalid']" :aria-describedby="attrs['aria-describedby']" v-model="form.supplyPolicy">
                 <option value="mintable">Mintable</option>
                 <option value="fixed">Fixed</option>
               </UiSelect>
@@ -232,7 +232,7 @@ function onBlur(key: string): void {
               </UiFieldHint>
             </template>
             <template #default="{ attrs }">
-              <UiSelect v-bind="attrs" v-model="form.metadataPolicy">
+              <UiSelect :id="attrs.id" :aria-invalid="attrs['aria-invalid']" :aria-describedby="attrs['aria-describedby']" v-model="form.metadataPolicy">
                 <option value="updatable">Updatable</option>
                 <option value="frozen">Frozen</option>
               </UiSelect>
@@ -250,7 +250,7 @@ function onBlur(key: string): void {
             </UiFieldHint>
           </template>
           <template #default="{ attrs }">
-            <UiSelect v-bind="attrs" v-model="form.packagePolicy">
+            <UiSelect :id="attrs.id" :aria-invalid="attrs['aria-invalid']" :aria-describedby="attrs['aria-describedby']" v-model="form.packagePolicy">
               <option value="immutable">Immutable</option>
               <option value="upgradeable">Upgradeable</option>
             </UiSelect>
@@ -269,7 +269,7 @@ function onBlur(key: string): void {
           <template #default="{ attrs }">
             <input
               type="text"
-              v-bind="attrs"
+              :id="attrs.id" :aria-invalid="attrs['aria-invalid']" :aria-describedby="attrs['aria-describedby']"
               v-model="form.recipient"
               placeholder="0x…"
               autocomplete="off"
