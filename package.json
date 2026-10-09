@@ -1,6 +1,6 @@
 {
   "name": "@meddleware/token-deployer-ui",
-  "version": "0.0.33",
+  "version": "0.0.34",
   "type": "module",
   "license": "0BSD",
   "repository": {
@@ -51,8 +51,8 @@
     "@meddleware/design-tokens": "^0.1.9",
     "@meddleware/sui-token-client": "^0.0.10",
     "@meddleware/ui": "^0.1.31",
-    "@meddleware/walrus-client": "^0.0.26",
-    "@meddleware/walrus-relay": "^0.1.29",
+    "@meddleware/walrus-client": "^0.0.27",
+    "@meddleware/walrus-relay": "^0.1.30",
     "@mysten/move-bytecode-template": "~0.4.1",
     "@mysten/sui": "^2.34.0",
     "@mysten/walrus": "~1.2.33",

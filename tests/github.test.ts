@@ -48,6 +48,30 @@ describe('createRepoAndPush', () => {
     ).rejects.toThrow(/already exists/)
   })
 
+  it('never lets the token follow a redirect, carry cookies or be cached', async () => {
+    const fetcher = vi.fn<(url: string) => Promise<Response>>(async (url: string): Promise<Response> =>
+      url.endsWith('/user/repos')
+        ? jsonRes({ html_url: 'h', owner: { login: 'bob' }, name: 'r', full_name: 'bob/r' })
+        : jsonRes({}, true, 201),
+    ) as unknown as typeof fetch
+    await createRepoAndPush({ token: 'secret', repoName: 'r', files: { a: 'x', b: 'y' }, fetcher })
+    const calls = (fetcher as unknown as { mock: { calls: [string, RequestInit][] } }).mock.calls
+    expect(calls).toHaveLength(3)
+    for (const [, init] of calls) {
+      expect(init?.redirect).toBe('error')
+      expect(init?.credentials).toBe('omit')
+      expect(init?.cache).toBe('no-store')
+    }
+  })
+
+  it('refuses a non-https API base before sending anything', async () => {
+    const fetcher = vi.fn() as unknown as typeof fetch
+    await expect(
+      createRepoAndPush({ token: 'secret', repoName: 'r', files: {}, fetcher, apiBase: 'http://api.github.com' }),
+    ).rejects.toThrow(/non-HTTPS/)
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
   it('sends the token as a Bearer header', async () => {
     const fetcher = vi.fn<(url: string) => Promise<Response>>(async (url: string): Promise<Response> =>
       url.endsWith('/user/repos')

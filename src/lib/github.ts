@@ -53,6 +53,12 @@ export interface GithubRepoResult {
   htmlUrl: string
 }
 
+/**
+ * Fetch options for every call that carries the token: an HTTP redirect is an error (the token must never
+ * follow a `Location`), no cookies, no cache.
+ */
+const SENSITIVE_FETCH = { redirect: 'error', credentials: 'omit', cache: 'no-store' } as const
+
 function ghHeaders(token: string): HeadersInit {
   return {
     Authorization: `Bearer ${token}`,
@@ -106,6 +112,7 @@ export async function createRepoAndPush(args: CreateRepoAndPushArgs): Promise<Gi
   assertHttps(apiBase)
 
   const createRes = await fetcher(`${apiBase}/user/repos`, {
+    ...SENSITIVE_FETCH,
     method: 'POST',
     headers: ghHeaders(args.token),
     body: JSON.stringify({
@@ -130,6 +137,7 @@ export async function createRepoAndPush(args: CreateRepoAndPushArgs): Promise<Gi
     const putRes = await fetcher(
       `${apiBase}/repos/${owner}/${encodeURIComponent(repo.name)}/contents/${encodePath(path)}`,
       {
+        ...SENSITIVE_FETCH,
         method: 'PUT',
         headers: ghHeaders(args.token),
         body: JSON.stringify({

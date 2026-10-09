@@ -89,7 +89,7 @@ RUN npm run build && npm run check:bundle
 # static-server is a minimal Go binary image — no shell, no package manager.
 # SPA_FALLBACK serves index.html for any extensionless path (Vue Router history mode).
 # CACHE_IMMUTABLE_PREFIX matches the /assets/ directory Vite emits with content hashes.
-FROM quay.io/meddleware-org/static-server:0.1.6@sha256:be51c4ee9c80fbbeda1f546efa918a72628388bd0fac0f52876e8234b51275c0
+FROM quay.io/meddleware-org/static-server:0.1.7@sha256:2e2273115b7575acbeb01c6d75f867be67125405f1bda5d956ae512d13c92379
 ARG CSP
 ENV CONTENT_SECURITY_POLICY="${CSP}"
 
@@ -98,5 +98,8 @@ COPY --from=build /app/dist /app/public
 ENV SERVE_DIR=/app/public \
     SPA_FALLBACK=true \
     CACHE_IMMUTABLE_PREFIX=/assets/
+
+# The base image already runs as nobody; say so here too so the Dockerfile is self-describing.
+USER 65534:65534
 
 EXPOSE 8080
