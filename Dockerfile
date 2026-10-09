@@ -83,7 +83,7 @@ ENV VITE_NETWORK=${VITE_NETWORK} \
 
 # No VITE_E2E build arg exists, and vite.config.ts refuses VITE_E2E=1 outside `--mode e2e` (so a
 # stray .env file cannot enable it either); the bundle check is the last line of defence.
-RUN npm run build && npm run check:bundle
+RUN npm run build && npm run check:bundle && npm run licenses
 
 # ── runtime stage ─────────────────────────────────────────────────────────────
 # static-server is a minimal Go binary image — no shell, no package manager.
@@ -94,6 +94,9 @@ ARG CSP
 ENV CONTENT_SECURITY_POLICY="${CSP}"
 
 COPY --from=build /app/dist /app/public
+# The lockfile lets SBOM scanners see the npm packages the bundle was built from (the bundle itself carries no
+# package metadata). It sits outside the served directory; THIRD_PARTY_LICENSES is served with the site.
+COPY --from=build /app/package-lock.json /usr/share/doc/token-deployer-ui/package-lock.json
 
 ENV SERVE_DIR=/app/public \
     SPA_FALLBACK=true \
