@@ -28,9 +28,9 @@ jobs:
       - name: Audit dependencies
         run: node .github/audit-gate.mjs
       - name: Type-check
-        run: npm run type-check --if-present
+        run: npm run type-check
       - name: Unit tests
-        run: npm run test --if-present
+        run: npm test
 
   publish-npm:
     name: npmjs (@meddleware/token-deployer-ui)

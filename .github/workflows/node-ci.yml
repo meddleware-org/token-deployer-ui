@@ -33,13 +33,13 @@ jobs:
         run: npm run type-check
 
       - name: Lint CSS (stylelint)
-        run: npm run lint:css --if-present
+        run: npm run lint:css
 
       - name: Lint JS (eslint + vuejs-a11y)
-        run: npm run lint:js --if-present
+        run: npm run lint:js
 
       - name: Lint HTML (html-validate)
-        run: npm run lint:html --if-present
+        run: npm run lint:html
 
       - name: Unit tests
         run: npm test
