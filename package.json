@@ -68,7 +68,7 @@
     "@meddleware/eslint-config": "^0.0.2",
     "@meddleware/wallet-adapter": "^0.0.17",
     "@playwright/test": "^1.56.0",
-    "@types/node": "~24.12.2",
+    "@types/node": "~25.9.9",
     "@vitejs/plugin-vue": "^6.0.8",
     "@vitejs/plugin-vue-jsx": "^5.1.6",
     "@vitest/eslint-plugin": "^1.6.23",
