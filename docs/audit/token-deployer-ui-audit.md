@@ -65,7 +65,7 @@ green, `e2e:testnet` PASS 2026-10-09):
 - The relay gate moved to the 2026-10-09 `access_gate` publication (0.0.29); the live bundle carries only
   the new package and gate. The `suiBoundary` lint is adopted (`eslint-config` 0.0.2) and enforced.
 - Recorded without a fix: F29 (blanket `https:` in `connect-src`, ACCEPTED-RISK), F30 (npm publish gate is
-  a subset of CI; RESOLVED 2026-10-18, 0.0.36), F31 (cosign identity pins the repository, not the workflow, ACCEPTED-RISK),
+  a subset of CI; RESOLVED 2026-10-18, 0.0.36), F31 (cosign identity pinned the repository, not the workflow; MITIGATED 2026-10-18: the workspace `verify-digests.sh` default is now workflow-anchored, only the workspace `RUNBOOK.md` example is still repository-wide),
   F32 (private-registry mirror jobs, DEFERRED to the maintainer), F33 (one allowlisted dev-tool advisory,
   ACCEPTED-RISK), F34 (licence and GitHub fetches have no timeout or size bound; RESOLVED 2026-10-18, 0.0.36).
 
@@ -416,16 +416,21 @@ package stays a source mirror, OIDC-published with provenance, tag == version ch
 
 ### F31 — The cosign identity pins the repository, not the workflow
 
-**Severity:** Info   **Disposition:** ACCEPTED-RISK
+**Severity:** Info   **Disposition:** MITIGATED (2026-10-18: the workspace `verify-digests.sh` default is workflow-anchored; the workspace `RUNBOOK.md` example is still repository-wide; was ACCEPTED-RISK)
 **Where:** `bootstrap/images/verify-digests.sh` (workspace), the workspace `RUNBOOK.md` verify command
-**Issue:** the verify command uses `--certificate-identity-regexp` `https://github.com/meddleware-org/<name>/`
-(case-insensitive), which accepts any workflow or ref in the repository; this repo's README publishes no
+**Issue:** the verify command used `--certificate-identity-regexp` `https://github.com/meddleware-org/<name>/`
+(case-insensitive), which accepted any workflow or ref in the repository; this repo's README publishes no
 command of its own.
 **Impact:** a workflow added to the repository by someone with write access could sign an image the
 cluster check would accept.
-**Remediation / evidence:** the repository is the signing boundary (only its workflows can obtain that
-identity; branch and tag rules are the maintainer's). Anchoring to `docker-publish.yml@refs/tags/v*` is an
-`COSIGN_IDENTITY_REGEXP` override in the workspace script; all 16 deployed images verified 2026-10-09 and again 2026-10-18; the 2026-10-18 run used the workflow-anchored identity `docker-publish.yml@refs/tags/v*`, which is narrower than the repository-wide check this finding describes (disposition left to the workspace audit).
+**Remediation / evidence:** fixed in the workspace script on 2026-10-18: the default identity in
+`bootstrap/images/verify-digests.sh` is now `^https://github\.com/meddleware-org/${name}/\.github/workflows/docker-publish\.yml@refs/tags/v`
+(`COSIGN_IDENTITY_REGEXP` still overrides it), so a signature from any other workflow or ref of the repository is
+rejected. All 16 deployed and contingency images verified valid against it on 2026-10-18
+(`STRICT=0 bash bootstrap/images/verify-digests.sh`, 0.0.36 included); 2026-10-09 (0.0.35) was
+checked with the earlier repository-wide identity. This repository publishes no verify command. What remains: the workspace `RUNBOOK.md` release section (the `cosign verify` example for a published image) still shows the
+repository-wide pattern `https://github.com/meddleware-org/<name>/.*`; it is a workspace document outside this repository, so it
+is not changed here and the finding stays MITIGATED until that example is anchored the same way.
 
 ### F32 — Self-hosted registry mirror jobs
 
@@ -675,7 +680,7 @@ only; `USER 65534:65534`; no secret in any `ARG`/`ENV` (the build args are the p
 the deployment is read-only root, `runAsNonRoot` uid 65534, no privilege escalation, all capabilities
 dropped, `RuntimeDefault` seccomp, `automountServiceAccountToken: false`, readiness and liveness probes on
 `/`, requests 5m/16Mi and limits 100m/48Mi; digest `sha256:6b8f5aff…4f2d` (0.0.36; 0.0.35 was `sha256:d9005ca3…`) in both `config/images.yaml` and the
-overlay; cosign signature verified 2026-10-09 (0.0.35) and 2026-10-18 (0.0.36) (F31). Not run: a Trivy *config* scan of the Dockerfile and
+overlay; cosign signature verified 2026-10-09 (0.0.35) and 2026-10-18 (0.0.36; the latter against the workflow-anchored identity) (F31). Not run: a Trivy *config* scan of the Dockerfile and
 manifests (the image scan runs at release).
 
 ## Section C — Test-coverage & hermetic/live split
@@ -767,8 +772,8 @@ Mainnet IDs: not yet populated (mainnet-blocked).
 - **SC-M1, SC-M3, SC-M5, SC-M9, SC-M10** — hold through sui-token-client, wallet-adapter and
   access-gate-client; the others are N/A or the client's.
 - **WAL-M1–WAL-M9** — hold (Walrus categories).
-- **IMG-M1–IMG-M8** — hold (F27, B.VUE-2); IMG-M8's pinned verification identity holds at repository level
-  only (F31).
+- **IMG-M1–IMG-M8** — hold (F27, B.VUE-2); IMG-M8's pinned verification identity now holds at workflow level in the cluster check
+  (2026-10-18); the workspace `RUNBOOK.md` example is still repository-wide (F31, MITIGATED).
 - **OPS-M7, OPS-M8** — hold after F20 (reviewer per OQ1); OPS-M1 (chain-identifier preflight) is N/A to
   SDK-only harnesses with a fixed RPC per network; the other OPS items concern the harness and hold.
 - **AUTH-M9** — holds (F26): the user's GitHub token is memory-only, sent only to its https origin, cleared
@@ -777,7 +782,7 @@ Mainnet IDs: not yet populated (mainnet-blocked).
 
 ## Implementation suggestions (SHOULD / MAY)
 
-- MAY anchor the cosign identity to `docker-publish.yml` on `refs/tags/v*` via `COSIGN_IDENTITY_REGEXP` (F31).
+- MAY anchor the workspace `RUNBOOK.md` `cosign verify` example to `docker-publish.yml` on `refs/tags/v*` (F31; the `verify-digests.sh` default already is, 2026-10-18).
 - MAY run a Trivy config scan of the Dockerfile and manifests in CI.
 - MAY show the coin type's package id next to the explorer link in the result panel.
 
@@ -864,3 +869,4 @@ the team behind the Sui VM and the Move bytecode format.
   test. Counts: 95 unit tests in 13 files, 10 Playwright runs (mocked; `e2e:testnet` not run); type-check,
   lint:css/js/html, build, `check:bundle`, `check:licenses` and the audit gate clean.
 - 2026-10-18 — released and deployed (`v0.0.36` = `581e9fd`, `0.0.36@sha256:6b8f5affeb2467c40a47e2c43dd5c226cb7c22b75d0ab19a2b11b7abddd14f2d`), verified live. Cosign keyless signature verified against the workflow-anchored identity (`verify-digests.sh` 16/16); published to npm and as an image; rollout (`apply.sh token-deployer-ui`) succeeded; the page loads in headless Chromium with no console errors or CSP violations and the live headers are present (re-read with `curl -I`). The mainnet-blocked, maintainer and external-review gates are unchanged.
+- 2026-10-18 — F31 (cosign identity) MITIGATED: the default identity in `bootstrap/images/verify-digests.sh` is now workflow-anchored (`^https://github\.com/meddleware-org/${name}/\.github/workflows/docker-publish\.yml@refs/tags/v`); all 16 deployed and contingency images verified valid against it (`STRICT=0 bash bootstrap/images/verify-digests.sh`). This repository publishes no verify command. Remaining: the workspace `RUNBOOK.md` release section still shows the repository-wide `cosign verify` example (outside this repository). Counts: F31 moves from ACCEPTED-RISK to MITIGATED; F29 and F33 remain ACCEPTED-RISK.
