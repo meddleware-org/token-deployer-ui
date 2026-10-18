@@ -13,16 +13,16 @@
 **Runtime targets:** browser
 **Peer dependencies:** `@meddleware/wallet-adapter >=0.0.12 <0.2.0` (the host's single copy)
 **Auth role(s):** holder of a user-supplied third-party token (the user's own GitHub token, browser memory, one operation); client of the nft-gate access proof (signed by the wallet, built by `nft-gate-client` via `walrus-client`). No issuer, no session, no identity provider
-**Images:** `quay.io/meddleware-org/token-deployer-ui:0.0.35@sha256:d9005ca3…749d` (Docker Hub mirror; cosign keyless, SPDX SBOM attestation, build provenance; verified 2026-10-09, `verify-digests.sh` 16/16)
-**Base images:** build `node:24-slim@sha256:0e0ff40c…f9b6`; runtime `quay.io/meddleware-org/static-server:0.1.8@sha256:e32cf42b…4000` (0.1.7 `sha256:2e227311…2379` for the 0.0.35 image; tag digest read from quay.io 2026-10-18)
+**Images:** `quay.io/meddleware-org/token-deployer-ui:0.0.36@sha256:6b8f5affeb2467c40a47e2c43dd5c226cb7c22b75d0ab19a2b11b7abddd14f2d` (Docker Hub mirror, same digest; cosign keyless signature verified 2026-10-18 against the workflow-anchored identity, `verify-digests.sh` 16/16; SPDX SBOM attestation, build provenance). Superseded 0.0.35 was `sha256:d9005ca3…749d`
+**Base images:** build `node:24-slim@sha256:0e0ff40c…f9b6`; runtime `quay.io/meddleware-org/static-server:0.1.8@sha256:e32cf42b…4000` (the 0.0.35 image deployed 2026-10-09 carried 0.1.7 `sha256:2e227311…2379`; tag digest read from quay.io 2026-10-18)
 **Runtime user:** `USER 65534:65534`   **Runtime FS:** read-only root, no writable mounts
 **Deployed by:** `post-bootstrap/token-deployer-ui/overlays/default`; digest from `config/images.yaml`
 **Build args:** the `VITE_*` public values only (network, treasury, RPC, relay, gate id, tip ceiling, public URL) — none secret, none a test switch
-**Deployment status:** npm v0.0.35 (2026-10-09); image `quay.io/meddleware-org/token-deployer-ui` serving `sui-token-deployer.meddleware.co.uk` at 0.0.35 (`sha256:d9005ca3…`, deployed 2026-10-09); embedded in dashboard 0.1.84 (`dash.meddleware.co.uk/blockchain`, "Token Deployer" tab)
-**Review date:** 2026-09-24 (first pass) · re-verified 2026-10-02 · re-verified 2026-10-09 · fix wave 2026-10-18
+**Deployment status:** npm v0.0.36 (2026-10-18); image `quay.io/meddleware-org/token-deployer-ui` serving `sui-token-deployer.meddleware.co.uk` at 0.0.36 (`sha256:6b8f5aff…4f2d`; release tag `v0.0.36` = `581e9fd`; released, signature verified and deployed 2026-10-18, rollout succeeded; 0.0.35 `sha256:d9005ca3…` was deployed 2026-10-09; live headers re-checked 2026-10-18); embedded in dashboard 0.1.85 (`dash.meddleware.co.uk/blockchain`, "Token Deployer" tab)
+**Review date:** 2026-09-24 (first pass) · re-verified 2026-10-02 · re-verified 2026-10-09 · fix wave 2026-10-18 (0.0.36, released and deployed)
 **Reviewer:** Internal review
 **Severity ceiling:** High — the operator fee is split inside the user's publish transaction, the app patches bytecode the user signs, its icon uploads use the paid, NFT-gated relay, and it can hold the user's GitHub token for one push. It holds no keys and no server.
-**Status:** fix wave 2026-10-18 (0.0.36, commit `0c427e8`; not yet released)
+**Status:** fix wave 2026-10-18 (0.0.36, commit `0c427e8`; released and deployed 2026-10-18, signature verified, rollout succeeded)
 
 ---
 
@@ -370,7 +370,7 @@ it; the merge job runs Trivy on the pushed digest (CRITICAL/HIGH, fixable only, 
 `cosign sign`, then the SPDX SBOM attestation and provenance for quay.io and Docker Hub; the Dockerfile
 copies `package-lock.json` to `/usr/share/doc/token-deployer-ui/` and generates
 `THIRD_PARTY_LICENSES` (served; HTTP 200 on the live site 2026-10-09; CI runs `check:licenses`); the runtime
-base is static-server 0.1.7 (Go 1.26.9) with an explicit `USER 65534:65534`; the pod sets
+base is static-server 0.1.7 (Go 1.26.9) at the 2026-10-09 review (0.1.8 in 0.0.36) with an explicit `USER 65534:65534`; the pod sets
 `automountServiceAccountToken: false`, `runAsNonRoot`, read-only root, all capabilities dropped,
 `RuntimeDefault` seccomp, probes and limits.
 
@@ -425,7 +425,7 @@ command of its own.
 cluster check would accept.
 **Remediation / evidence:** the repository is the signing boundary (only its workflows can obtain that
 identity; branch and tag rules are the maintainer's). Anchoring to `docker-publish.yml@refs/tags/v*` is an
-`COSIGN_IDENTITY_REGEXP` override in the workspace script; all 16 deployed images verified 2026-10-09.
+`COSIGN_IDENTITY_REGEXP` override in the workspace script; all 16 deployed images verified 2026-10-09 and again 2026-10-18; the 2026-10-18 run used the workflow-anchored identity `docker-publish.yml@refs/tags/v*`, which is narrower than the repository-wide check this finding describes (disposition left to the workspace audit).
 
 ### F32 — Self-hosted registry mirror jobs
 
@@ -674,8 +674,8 @@ only; `USER 65534:65534`; no secret in any `ARG`/`ENV` (the build args are the p
 `VITE_E2E` or `VITE_ALLOW_UNSET_TREASURY`); `CONTENT_SECURITY_POLICY` is set in the image (owner lens: VUE);
 the deployment is read-only root, `runAsNonRoot` uid 65534, no privilege escalation, all capabilities
 dropped, `RuntimeDefault` seccomp, `automountServiceAccountToken: false`, readiness and liveness probes on
-`/`, requests 5m/16Mi and limits 100m/48Mi; digest `sha256:d9005ca3…` in both `config/images.yaml` and the
-overlay; cosign signature verified 2026-10-09 (F31). Not run: a Trivy *config* scan of the Dockerfile and
+`/`, requests 5m/16Mi and limits 100m/48Mi; digest `sha256:6b8f5aff…4f2d` (0.0.36; 0.0.35 was `sha256:d9005ca3…`) in both `config/images.yaml` and the
+overlay; cosign signature verified 2026-10-09 (0.0.35) and 2026-10-18 (0.0.36) (F31). Not run: a Trivy *config* scan of the Dockerfile and
 manifests (the image scan runs at release).
 
 ## Section C — Test-coverage & hermetic/live split
@@ -863,3 +863,4 @@ the team behind the Sui VM and the Move bytecode format.
   recommendation. Colour-token rule (design-tokens F10) checked: no `color: var(--warning)`, pinned by a
   test. Counts: 95 unit tests in 13 files, 10 Playwright runs (mocked; `e2e:testnet` not run); type-check,
   lint:css/js/html, build, `check:bundle`, `check:licenses` and the audit gate clean.
+- 2026-10-18 — released and deployed (`v0.0.36` = `581e9fd`, `0.0.36@sha256:6b8f5affeb2467c40a47e2c43dd5c226cb7c22b75d0ab19a2b11b7abddd14f2d`), verified live. Cosign keyless signature verified against the workflow-anchored identity (`verify-digests.sh` 16/16); published to npm and as an image; rollout (`apply.sh token-deployer-ui`) succeeded; the page loads in headless Chromium with no console errors or CSP violations and the live headers are present (re-read with `curl -I`). The mainnet-blocked, maintainer and external-review gates are unchanged.
