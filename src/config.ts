@@ -2,7 +2,7 @@
 // Vite env vars so they can be set at build/deploy time without code changes.
 // See .env.example.
 import type { TokenNetwork as Network } from '@meddleware/sui-token-client'
-import { relayGateConfig, type RelayGateConfig } from '@meddleware/walrus-relay'
+import { relayGateConfig, requireHttpsHost, type RelayGateConfig } from '@meddleware/walrus-relay'
 
 const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {}
 
@@ -69,6 +69,24 @@ export const PUBLIC_WALRUS_RELAY_HOSTS: Record<WalrusNetwork, string> = {
 }
 
 /**
+ * The operator relay host from `VITE_WALRUS_RELAY_*`, or the public relay when it is unset. walrus-relay
+ * accepts only https hosts (plain http on loopback, for a local testbed) and throws for any other, which
+ * would blank the icon picker; a build-time value that fails the check is ignored with a warning instead,
+ * so the picker falls back to the public relay rather than failing.
+ */
+export function operatorRelayHost(network: WalrusNetwork, value: string | undefined): string {
+  const fallback = PUBLIC_WALRUS_RELAY_HOSTS[network]
+  if (!value) return fallback
+  try {
+    requireHttpsHost(value, `VITE_WALRUS_RELAY_${network.toUpperCase()}`)
+    return value
+  } catch (e) {
+    console.warn(`[token-deployer-ui] operator relay ignored: ${e instanceof Error ? e.message : String(e)}`)
+    return fallback
+  }
+}
+
+/**
  * Upload relay host per Walrus network.
  *
  * Fallback order: `VITE_WALRUS_RELAY_*` (the operator's own relay — the only way
@@ -77,8 +95,8 @@ export const PUBLIC_WALRUS_RELAY_HOSTS: Record<WalrusNetwork, string> = {
  * earn nothing. A user may also override this at runtime by entering a relay URL.
  */
 export const WALRUS_RELAY_HOSTS: Record<WalrusNetwork, string> = {
-  testnet: env.VITE_WALRUS_RELAY_TESTNET || PUBLIC_WALRUS_RELAY_HOSTS.testnet,
-  mainnet: env.VITE_WALRUS_RELAY_MAINNET || PUBLIC_WALRUS_RELAY_HOSTS.mainnet,
+  testnet: operatorRelayHost('testnet', env.VITE_WALRUS_RELAY_TESTNET),
+  mainnet: operatorRelayHost('mainnet', env.VITE_WALRUS_RELAY_MAINNET),
 }
 
 /** True when an operator-owned relay (not the public fallback) is configured. */
@@ -113,9 +131,10 @@ export const WALRUS_MAX_TIP_MIST: bigint = BigInt(env.VITE_WALRUS_MAX_TIP_MIST |
 // NFT-gated relay access (optional)
 // ---------------------------------------------------------------------------
 // When the operator relay runs behind an `nft-gate` gateway, using it requires
-// holding the gate's access NFT. The operator sets the gate id, soulbound flag (default true) and
-// price per network via env; `relayGateConfig` (walrus-relay) fixes the package and PlatformConfig
-// to the published access_gate deployment. When no gate id is set the relay is ungated.
+// holding the gate's access NFT. The operator sets the gate id and soulbound flag (default true) per
+// network via env; `relayGateConfig` (walrus-relay) fixes the package and PlatformConfig to the
+// published access_gate deployment, and `useAccessGate` refuses any other. The price and payees are
+// read from the chain, never configured. When no gate id is set the relay is ungated.
 
 /** The gate config for a network, or `null` (ungated) without a gate id or a recorded deployment. */
 export function parseAccessGate(network: WalrusNetwork, envSource: Record<string, string | undefined> = env): RelayGateConfig | null {
@@ -126,7 +145,6 @@ export function parseAccessGate(network: WalrusNetwork, envSource: Record<string
     return relayGateConfig(network, {
       gateId,
       soulbound: (envSource[`VITE_ACCESS_GATE_SOULBOUND_${NET}`] ?? 'true') !== 'false',
-      priceMist: BigInt(envSource[`VITE_ACCESS_GATE_PRICE_MIST_${NET}`] || '0'),
     })
   } catch (e) {
     console.warn(`[token-deployer-ui] access gate for ${network} disabled: ${e instanceof Error ? e.message : String(e)}`)

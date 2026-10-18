@@ -32,14 +32,13 @@ describe('parseAccessGate', () => {
 
   it('takes the package and PlatformConfig from the deployment; soulbound by default', () => {
     const d = accessGateDeployment('testnet')
-    const gate = parseAccessGate('testnet', { VITE_ACCESS_GATE_ID_TESTNET: '0xgate', VITE_ACCESS_GATE_PRICE_MIST_TESTNET: '5' })
+    const gate = parseAccessGate('testnet', { VITE_ACCESS_GATE_ID_TESTNET: '0xgate' })
     expect(gate).toEqual({
       packageId: d.publishedAt,
       platformConfigId: d.platformConfigId,
       nftType: `${d.originalId}::access_gate::SoulboundAccessNFT`,
       gateId: '0xgate',
       soulbound: true,
-      priceMist: 5n,
     })
     expect(parseAccessGate('testnet', { VITE_ACCESS_GATE_ID_TESTNET: '0xgate', VITE_ACCESS_GATE_SOULBOUND_TESTNET: 'false' })!.nftType).toBe(
       `${d.originalId}::access_gate::AccessNFT`,

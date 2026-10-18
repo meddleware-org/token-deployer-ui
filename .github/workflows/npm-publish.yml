@@ -3,7 +3,7 @@ name: Publish (npm)
 # Publishes the app's library entry (@meddleware/token-deployer-ui) to npmjs on a v* tag, so it can be
 # embedded by the dashboard. npm is a SECONDARY output here (the app also ships a
 # container image via docker-publish.yml), so publication is opt-in via the
-# repository variable NPM_PUBLISH and gated on a self-contained `verify` job.
+# repository variable NPM_PUBLISH and gated on the full CI workflow (`verify`).
 # Authentication uses npm OIDC trusted publishing — no long-lived NPM_TOKEN.
 
 on:
@@ -15,22 +15,11 @@ permissions:
   contents: read
 
 jobs:
+  # The package is released only if the commit passes exactly what CI runs (type-check, all linters,
+  # tests, build, licences, e2e), as the image release does.
   verify:
-    name: Verify (type-check + test)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: '24'
-      - name: Install dependencies
-        run: npm ci
-      - name: Audit dependencies
-        run: node .github/audit-gate.mjs
-      - name: Type-check
-        run: npm run type-check
-      - name: Unit tests
-        run: npm test
+    name: Verify (CI checks)
+    uses: ./.github/workflows/node-ci.yml
 
   publish-npm:
     name: npmjs (@meddleware/token-deployer-ui)
@@ -68,7 +57,7 @@ jobs:
           NPM_PUBLISH: ${{ vars.NPM_PUBLISH }}
         run: |
           if [ "${NPM_PUBLISH}" != "true" ]; then
-            echo "::warning::npm publish --provenanceing not configured — set repository variable NPM_PUBLISH=true and configure an npmjs trusted publisher to enable it. Skipping npm publication."
+            echo "::warning::npm publish with provenance is not configured — set repository variable NPM_PUBLISH=true and configure an npmjs trusted publisher to enable it. Skipping npm publication."
             exit 0
           fi
           VERSION=$(node -p "require('./package.json').version")

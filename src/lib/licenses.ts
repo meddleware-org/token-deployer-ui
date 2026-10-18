@@ -42,6 +42,15 @@ export const POPULAR_LICENSE_IDS = [
 
 export const DEFAULT_LICENSE_ID = '0BSD'
 
+import {
+  LICENSE_TIMEOUT_MS,
+  MAX_LICENSE_LIST_BYTES,
+  MAX_LICENSE_TEXT_BYTES,
+  fetchWithTimeout,
+  readBoundedJson,
+  readBoundedText,
+} from './boundedFetch.js'
+
 type Fetcher = typeof fetch
 
 /** SPDX ids are limited to these characters; anything else is rejected. */
@@ -67,9 +76,9 @@ export interface LicenseCatalogue {
 /** Fetch and cache the SPDX license list. */
 export async function fetchLicenseList(fetcher: Fetcher = fetch): Promise<LicenseCatalogue> {
   if (!listCache) {
-    const res = await fetcher(LIST_URL)
+    const res = await fetchWithTimeout(fetcher, LIST_URL, {}, LICENSE_TIMEOUT_MS, 'The SPDX license list request')
     if (!res.ok) throw new Error(`failed to load SPDX license list (${res.status})`)
-    const json = (await res.json()) as { licenses?: RawLicense[] }
+    const json = (await readBoundedJson(res, MAX_LICENSE_LIST_BYTES, 'The SPDX license list')) as { licenses?: RawLicense[] }
     if (!json || !Array.isArray(json.licenses)) {
       throw new Error('unexpected SPDX license list format')
     }
@@ -109,9 +118,9 @@ export async function fetchLicenseText(
   if (!key || ['none', 'unlicensed', 'noassertion'].includes(key.toLowerCase())) return null
   if (!LICENSE_ID_RE.test(key)) throw new Error(`invalid license id "${key}"`)
   if (textCache.has(key)) return textCache.get(key) as string
-  const res = await fetcher(textUrl(key))
+  const res = await fetchWithTimeout(fetcher, textUrl(key), {}, LICENSE_TIMEOUT_MS, `The "${key}" license text request`)
   if (!res.ok) throw new Error(`failed to load license text for "${key}" (${res.status})`)
-  const text = await res.text()
+  const text = await readBoundedText(res, MAX_LICENSE_TEXT_BYTES, `The "${key}" license text`)
   textCache.set(key, text)
   return text
 }

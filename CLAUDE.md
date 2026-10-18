@@ -126,7 +126,9 @@ the relay source `crates/walrus-upload-relay`.)
   `nft-gate` project: an `nft-gate` gateway fronts the operator relay and admits only
   holders of an `access_gate` NFT. The app gates the operator-relay option on ownership
   (walrus-relay `useAccessGate`, built with `relayGateConfig` so the package and PlatformConfig are
-  the published deployment), offers a permissionless purchase CTA, and attaches
+  the published deployment; `useAccessGate({ network, gate, getClient })` throws for any other config),
+  offers a permissionless purchase CTA (`AccessGateCta`) that shows the price, payees and platform share
+  read from the chain (never configured at build time), and attaches
   a wallet-signed access proof (`sui:signPersonalMessage` → `uploadRelayAuthToken`) when the
   operator relay is used. Unset `VITE_ACCESS_GATE_*` → no gating (unchanged behaviour). The
   tip and the NFT are **independent levers** (tip = per-upload cost; NFT = access/abuse).

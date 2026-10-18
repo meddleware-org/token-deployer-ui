@@ -97,7 +97,7 @@ async function main() {
   // instead, and the free public relay is withheld. The public relay is offered only when no
   // operator relay is configured or it is down, so E2E_RELAY=public needs a build without
   // VITE_WALRUS_RELAY_TESTNET.
-  const purchase = page.getByRole('button', { name: 'Purchase relay access' })
+  const purchase = page.getByRole('button', { name: /^Purchase access/ })
   const uploadButton = page.getByRole('button', { name: /Upload to Walrus/ })
   const settle = async () => {
     for (let i = 0; i < 40; i++) {

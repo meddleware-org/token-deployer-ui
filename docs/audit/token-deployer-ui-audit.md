@@ -4,25 +4,25 @@
 **Project:** `repos/token-deployer-ui` — `@meddleware/token-deployer-ui`, Vue 3 SPA + library component for client-side Sui coin deployment
 **Project type:** Vue app + UI library (embedded in the dashboard)
 **Template:** AUDIT_TEMPLATE.md (2026-10-08) + AUDIT_TEMPLATE_VUE.md (2026-10-08) + AUDIT_TEMPLATE_TS.md (2026-10-08) + AUDIT_TEMPLATE_SUI_CLIENT.md (2026-10-08) + AUDIT_TEMPLATE_WALRUS.md (2026-09-30) + AUDIT_TEMPLATE_IMG.md (2026-10-08) + AUDIT_TEMPLATE_OPS.md (2026-10-08) + AUDIT_TEMPLATE_AUTH.md (2026-10-08)
-**Sui SDK:** `@mysten/sui ^2.34.0` (one copy per host; `npm ls` single version 2.34.0); token logic from `@meddleware/sui-token-client ^0.0.10`
+**Sui SDK:** `@mysten/sui ^2.34.0` (one copy per host; `npm ls` single version 2.34.0); token logic from `@meddleware/sui-token-client ^0.0.11` (`@mysten/sui` is its peer; this app's range satisfies `^2.33.2`)
 **Transport:** gRPC(-web) through wallet-adapter's read client (`src/wallet.ts`); no JSON-RPC
 **Networks:** testnet and mainnet in the UI; localnet for development and `e2e:localnet`
-**On-chain packages consumed:** the Sui framework (`0x1`, `0x2`) only — the coin package is published by the user; the relay access gate comes from walrus-relay's `relayGateConfig` (`@meddleware/access-gate-client` 0.0.8 deployments, testnet `access_gate` `0xd7ddaa94…88c9`, PlatformConfig `0x3f81489d…e7b5`; both found in the live bundle 2026-10-09) with the gate id `VITE_ACCESS_GATE_ID_TESTNET` (`0x316f1bf9…faddc`, soulbound, 10 uses, 0.01 SUI). The superseded package `0xa55789…` and gate `0xfd6c3b…` do not appear in the live bundle
+**On-chain packages consumed:** the Sui framework (`0x1`, `0x2`) only — the coin package is published by the user; the relay access gate comes from walrus-relay's `relayGateConfig` (`@meddleware/access-gate-client` 0.0.9 deployments, testnet `access_gate` `0xd7ddaa94…88c9`, PlatformConfig `0x3f81489d…e7b5`; both found in the live bundle 2026-10-09) with the gate id `VITE_ACCESS_GATE_ID_TESTNET` (`0x316f1bf9…faddc`, soulbound, 10 uses, 0.01 SUI). The superseded package `0xa55789…` and gate `0xfd6c3b…` do not appear in the live bundle
 **Package manager / lockfile:** npm 11, `package-lock.json` committed (also copied into the image for SBOM tools)
 **Module format / publish model:** ESM; ships source (`exports["."] → src/index.ts`) for hosts that build it; standalone SPA image
 **Runtime targets:** browser
 **Peer dependencies:** `@meddleware/wallet-adapter >=0.0.12 <0.2.0` (the host's single copy)
 **Auth role(s):** holder of a user-supplied third-party token (the user's own GitHub token, browser memory, one operation); client of the nft-gate access proof (signed by the wallet, built by `nft-gate-client` via `walrus-client`). No issuer, no session, no identity provider
 **Images:** `quay.io/meddleware-org/token-deployer-ui:0.0.35@sha256:d9005ca3…749d` (Docker Hub mirror; cosign keyless, SPDX SBOM attestation, build provenance; verified 2026-10-09, `verify-digests.sh` 16/16)
-**Base images:** build `node:24-slim@sha256:0e0ff40c…f9b6`; runtime `quay.io/meddleware-org/static-server:0.1.7@sha256:2e227311…2379` (Go 1.26.9)
+**Base images:** build `node:24-slim@sha256:0e0ff40c…f9b6`; runtime `quay.io/meddleware-org/static-server:0.1.8@sha256:e32cf42b…4000` (0.1.7 `sha256:2e227311…2379` for the 0.0.35 image; tag digest read from quay.io 2026-10-18)
 **Runtime user:** `USER 65534:65534`   **Runtime FS:** read-only root, no writable mounts
 **Deployed by:** `post-bootstrap/token-deployer-ui/overlays/default`; digest from `config/images.yaml`
 **Build args:** the `VITE_*` public values only (network, treasury, RPC, relay, gate id, tip ceiling, public URL) — none secret, none a test switch
 **Deployment status:** npm v0.0.35 (2026-10-09); image `quay.io/meddleware-org/token-deployer-ui` serving `sui-token-deployer.meddleware.co.uk` at 0.0.35 (`sha256:d9005ca3…`, deployed 2026-10-09); embedded in dashboard 0.1.84 (`dash.meddleware.co.uk/blockchain`, "Token Deployer" tab)
-**Review date:** 2026-09-24 (first pass) · re-verified 2026-10-02 · re-verified 2026-10-09
+**Review date:** 2026-09-24 (first pass) · re-verified 2026-10-02 · re-verified 2026-10-09 · fix wave 2026-10-18
 **Reviewer:** Internal review
 **Severity ceiling:** High — the operator fee is split inside the user's publish transaction, the app patches bytecode the user signs, its icon uploads use the paid, NFT-gated relay, and it can hold the user's GitHub token for one push. It holds no keys and no server.
-**Status:** re-verified 2026-10-09
+**Status:** fix wave 2026-10-18 (0.0.36, commit pending; not yet released)
 
 ---
 
@@ -65,10 +65,22 @@ green, `e2e:testnet` PASS 2026-10-09):
 - The relay gate moved to the 2026-10-09 `access_gate` publication (0.0.29); the live bundle carries only
   the new package and gate. The `suiBoundary` lint is adopted (`eslint-config` 0.0.2) and enforced.
 - Recorded without a fix: F29 (blanket `https:` in `connect-src`, ACCEPTED-RISK), F30 (npm publish gate is
-  a subset of CI, ACCEPTED-RISK), F31 (cosign identity pins the repository, not the workflow, ACCEPTED-RISK),
+  a subset of CI; RESOLVED 2026-10-18, 0.0.36), F31 (cosign identity pins the repository, not the workflow, ACCEPTED-RISK),
   F32 (private-registry mirror jobs, DEFERRED to the maintainer), F33 (one allowlisted dev-tool advisory,
-  ACCEPTED-RISK), F34 (licence and GitHub fetches have no timeout or size bound, ACCEPTED-RISK; a one-line
-  fix for the next release).
+  ACCEPTED-RISK), F34 (licence and GitHub fetches have no timeout or size bound; RESOLVED 2026-10-18, 0.0.36).
+
+Fix wave 2026-10-18 (0.0.36, commit pending; 95 unit tests, 10 Playwright runs, all linters, type-check,
+build, `check:bundle`, `check:licenses` and the audit gate green):
+
+- **F34 (Low, RESOLVED)** — every licence and GitHub request has a timeout and every reply is read under a
+  size cap before it is parsed (`src/lib/boundedFetch.ts`).
+- **F30 (Low, RESOLVED)** — `npm-publish.yml` now runs the whole `node-ci.yml` as its `verify` job.
+- **F35 (Low, RESOLVED)** — walrus-relay 0.1.31 adopted: the access-pass price and payees are read from the
+  chain and shown before the wallet opens (the build-time `VITE_ACCESS_GATE_PRICE_MIST_*` is gone), the gate
+  must be the published deployment, and a relay host that is not https is ignored with a warning.
+- **F36 (Info, RESOLVED)** — the picker forgets the previous wallet's access state on an account change.
+- Dependencies: sui-token-client 0.0.11, walrus-client 0.0.28, walrus-relay 0.1.31, access-gate-client
+  0.0.9, design-tokens 0.1.10; image base static-server 0.1.8.
 
 Posture: no open finding above Info. Remaining items are maintainer-only or mainnet-gated: the real-chain
 environment's reviewer (OQ1), the registry-credential inventory (`OPERATOR_TASKS.md` "Image registry
@@ -108,7 +120,7 @@ for the length of one operation each:
 | --- | --- | --- | --- | --- | --- |
 | Sui framework `0x1`, `0x2` | system | client constants | publish dependencies; `coin_registry::finalize_registration`, `coin::mint`, `transfer::public_freeze_object`, `package::make_immutable` | n/a (system); drift checked in sui-token-client's live ABI test | closed |
 | `0x2::coin::TreasuryCap<T>` | per deploy | publish effects | result extraction (exact type, own package) | a foreign cap is never taken | closed |
-| relay `Gate` | `0x316f1bf9…faddc` (testnet; package `0xd7ddaa94…88c9`, PlatformConfig `0x3f81489d…e7b5`) | `VITE_ACCESS_GATE_ID_TESTNET` + `relayGateConfig` (access-gate-client 0.0.8 `deployments`) | operator-relay access | wrong id → no pass found → no operator relay | closed |
+| relay `Gate` | `0x316f1bf9…faddc` (testnet; package `0xd7ddaa94…88c9`, PlatformConfig `0x3f81489d…e7b5`) | `VITE_ACCESS_GATE_ID_TESTNET` + `relayGateConfig` (access-gate-client 0.0.9 `deployments`) | operator-relay access | wrong id → no pass found → no operator relay | closed |
 
 ## Severity scale
 
@@ -116,8 +128,8 @@ Critical / High / Medium / Low / Info / Positive.
 
 ## Scope
 
-- **In scope (0.0.35):** `src/**` (components, composables, `config.ts`, `wallet.ts`,
-  `templateWasm.ts`, `lib/{deployExecutor,validation,form,licenses,github,errors,walrus-constants}.ts`),
+- **In scope (0.0.36):** `src/**` (components, composables, `config.ts`, `wallet.ts`,
+  `templateWasm.ts`, `lib/{deployExecutor,validation,form,licenses,github,boundedFetch,errors,walrus-constants}.ts`),
   `composables/{useDeploy,useWalrusRelay}.ts`,
   `vite.config.ts`, `public/_headers`, `.env.example` / `.env.production`, `Dockerfile`,
   `.dockerignore`, `scripts/*` (including `third-party-licenses.mjs`), `e2e/*`, `tests/*`,
@@ -125,7 +137,7 @@ Critical / High / Medium / Low / Info / Positive.
   and the deployment manifests under `post-bootstrap/token-deployer-ui/` (read-only).
 - **Out of scope:** `@meddleware/sui-token-client`, `walrus-client`, `walrus-relay`,
   `wallet-adapter`, `@mysten/*` (own audits or upstream); the relay, aggregator and RPC.
-- **Environment (2026-10-09):** `npm test` 59/59 in 11 files; Playwright mocked suite 10/10 (5 specs ×
+- **Environment (2026-10-18, 0.0.36):** `npm test` 95/95 in 13 files; Playwright mocked suite 10/10; all lints, `type-check`, `build`, `check:bundle`, `check:licenses` clean; audit gate 1 allowlisted advisory (F33). **Earlier (2026-10-09):** `npm test` 59/59 in 11 files; Playwright mocked suite 10/10 (5 specs ×
   Chromium and Firefox, `build:e2e`); `npm run lint` (stylelint, eslint + vuejs-a11y + `suiBoundary`,
   html-validate) and `type-check` clean; `node .github/audit-gate.mjs` 1 allowlisted advisory (F33);
   `e2e:testnet` PASS 2026-10-09 (real publish, result panel, zip, fee delivered); live bundles and headers of
@@ -390,16 +402,17 @@ break white-label builds. Revisit when the hosts are fixed for mainnet.
 
 ### F30 — The npm publish gate is a subset of CI
 
-**Severity:** Low   **Disposition:** ACCEPTED-RISK
+**Severity:** Low   **Disposition:** RESOLVED (0.0.36, commit pending)
 **Where:** `.github/workflows/npm-publish.yml`
 **Issue:** the npm job's `verify` runs `npm ci`, the audit gate, type-check and unit tests, not the full CI
 workflow (linters, build, bundle check, licence check, Playwright). The image release (F27) does run the full
 workflow on the same tag.
 **Impact:** a tag could publish the source package while the image job refuses the same commit. The npm
 package contains source only (no build output or secrets); consumers build it themselves.
-**Remediation / evidence:** accepted: the package is a source mirror for the dashboard, OIDC-published with
-provenance, tag == version checked, idempotent; the same tag cannot ship an image CI refused. Calling
-`node-ci.yml` from `npm-publish.yml` would close it; not required for safety.
+**Remediation / evidence:** `npm-publish.yml` `verify` is now `uses: ./.github/workflows/node-ci.yml` (the same
+`workflow_call` the image release uses), so the package is published only if the commit passes the audit gate,
+type-check, all linters, unit tests, build, licence check, bundle check and the mocked Playwright suite. The
+package stays a source mirror, OIDC-published with provenance, tag == version checked, idempotent.
 
 ### F31 — The cosign identity pins the repository, not the workflow
 
@@ -438,7 +451,7 @@ gate enforces (`audit-gate.mjs` 2026-10-09: 1 high/critical, 0 not allowlisted).
 
 ### F34 — Licence catalogue and GitHub calls have no timeout or size bound
 
-**Severity:** Low   **Disposition:** ACCEPTED-RISK
+**Severity:** Low   **Disposition:** RESOLVED (0.0.36, commit pending)
 **Where:** `src/lib/licenses.ts` (`fetchLicenseList`, `fetchLicenseText`), `src/lib/github.ts`
 **Issue:** the TS lens asks for a timeout on every `fetch` and a size check before parsing untrusted JSON.
 The SPDX list and licence text come from `raw.githubusercontent.com/spdx/license-list-data/main` (a mutable
@@ -449,9 +462,49 @@ into fresh literals).
 licence text lands in the `LICENSE` of the package the user downloads or pushes (plain text, shown in the
 download the user can read; the id is regex-checked and never reaches Move source unvalidated). No funds,
 signing or chain state depend on either path.
-**Remediation / evidence:** accepted for testnet: both paths are user-initiated, optional and off the money
-path, and the browser bounds a stalled connection. A one-line `AbortSignal.timeout` plus a body-length check
-on the two helpers closes it; fold it into the next release of this package.
+**Remediation / evidence:** `src/lib/boundedFetch.ts`: `fetchWithTimeout` gives every request an
+`AbortSignal.timeout` (15 s licence, 30 s GitHub; it covers the body read as well), and `readBoundedText` /
+`readBoundedJson` refuse a declared `Content-Length` over the cap and cancel a stream that grows past it
+(2 MiB for the SPDX list, 256 KiB for a licence text, 1 MiB for a GitHub reply) before anything is parsed; a
+non-JSON reply fails with a clear message and an oversized text is not cached. Wired into `fetchLicenseList`,
+`fetchLicenseText` and all three GitHub calls (repository create, file PUTs, error bodies). Tests:
+`tests/licenses.test.ts` and `tests/github.test.ts` ("bounded ... (audit F34)": signal on each request,
+timeout at 15 s / 30 s with the message, stalled body, oversized declared and undeclared bodies, non-JSON).
+Pinning the SPDX data to a release tag instead of `main` was considered and not done: it would freeze the
+catalogue until someone bumps the tag; the id regex and the size cap bound what a changed text can do.
+
+### F35 — The access-pass price was configured, not read from the chain
+
+**Severity:** Low   **Disposition:** RESOLVED (0.0.36, commit pending; walrus-relay 0.1.31)
+**Where:** `src/config.ts`, `src/components/IconPicker.vue`, `Dockerfile`, `.env.example`, `.github/workflows/docker-publish.yml`
+**Issue:** the gate config carried a build-time `priceMist` (`VITE_ACCESS_GATE_PRICE_MIST_*`) and the purchase
+prompt was a bare "Purchase relay access" button: the user was not shown the exact payment or who receives it
+before the wallet opened, and a configured price could disagree with the gate on the chain. A relay host from
+`VITE_WALRUS_RELAY_*` that was not https would also throw inside the picker (walrus-relay 0.1.31 validates
+hosts) and blank the form.
+**Impact:** the wallet preview still showed the real transfer, so no funds were at risk beyond a user
+approving what they had not been told; the stale variable could mislead an operator.
+**Remediation / evidence:** the variable is removed from the code, `.env.example`, the Dockerfile build args,
+`docker-publish.yml` and the docs. `useAccessGate({ network, gate, getClient })` now throws for any gate that is
+not the published deployment; the picker shows walrus-relay's `AccessGateCta` with the terms read from the chain
+(payment, operator and platform payees and shares, network, pass kind), keeps the button disabled until they are
+read, offers "Read the price again" on a read failure, and signs only for terms the user has seen.
+`operatorRelayHost` ignores (with a warning) a build-time relay host that fails walrus-relay's https check
+and uses the public relay. Tests: `tests/accessGate.test.ts` (no `priceMist`, a leftover price variable ignored,
+pinned config accepted, a foreign package refused, no wallet call when the price is unreadable,
+`operatorRelayHost` cases) and `tests/iconPickerGate.test.ts` (the picker shows the prompt, the button is
+disabled, no executor is built). `scripts/e2e-walrus-browser.mjs` looks for the new button name.
+
+### F36 — Access state outlived the wallet that earned it
+
+**Severity:** Info   **Disposition:** RESOLVED (0.0.36, commit pending)
+**Where:** `src/components/IconPicker.vue`
+**Issue:** on an account change the picker re-ran the ownership check but kept the previous wallet's access,
+uses and held pass until it answered; on a disconnect it kept them.
+**Impact:** a brief wrong "has access" state; the gateway re-verifies the proof, so no bypass.
+**Remediation / evidence:** the account watcher calls `accessGate.reset()` before the check (the documented use
+of the walrus-relay composable). Covered by the picker smoke test mounting against the gated composable; the
+reset itself is walrus-relay's.
 
 ## Section A — Invariant verification matrix
 
@@ -473,14 +526,15 @@ on the two helpers closes it; fold it into the next release of this package.
 | I14 | A published coin is never deployed twice and can always be finished | `useDeploy.ts` | `useDeploy.test.ts` | HOLDS (F24) |
 | I15 | The user's GitHub token goes only to the https GitHub origin, is never redirected, cached, stored or kept after the push | `github.ts` (`SENSITIVE_FETCH`, `assertHttps`), `GithubPush.vue` | `github.test.ts`, `githubPush.test.ts` | HOLDS (F26) |
 | I16 | Supply and metadata policies are applied by the coin's `init` and recorded in the registry | sui-token-client patched constants | client e2e:localnet (fixed supply + frozen metadata); `e2e:testnet` | HOLDS (F28) |
-| I17 | Every network call is bounded in time and size | — | — | GAP, see F34 (ACCEPTED-RISK) |
+| I17 | Every network call of the app's own helpers is bounded in time and size | `boundedFetch.ts` in `licenses.ts`, `github.ts` | `licenses.test.ts`, `github.test.ts` (F34) | HOLDS (F34) |
+| I18 | The access-pass price and payees are read from the chain and shown before the wallet opens | walrus-relay `useAccessGate` + `AccessGateCta` | `accessGate.test.ts`, `iconPickerGate.test.ts` | HOLDS (F35) |
 
 ### Vue lens categories
 
 | Category | Status |
 | --- | --- |
 | Untrusted rendering | HOLDS — no `v-html`; blob thumbnails via `safeHref`; explorer links via `suiExplorerUrl`; wallet icons via the adapter (`safeIcon` allows `data:image/…` and https only); ui 0.1.31 `safeHref` also refuses credentials in the authority |
-| Colour & links | HOLDS (inherited) — contrast is measured in a real browser (axe over every theme × season) in `@meddleware/ui` 0.1.31 and `design-tokens` 0.1.9 `check:contrast`; this app adds no hard-coded colours of its own (stylelint `color-no-hex` is in ui). The app itself runs no axe gate (html-validate and eslint-a11y are quality gates) |
+| Colour & links | HOLDS (inherited) — contrast is measured in a real browser (axe over every theme × season) in `@meddleware/ui` 0.1.31 and `design-tokens` 0.1.10 `check:contrast`; this app adds no hard-coded colours of its own (stylelint `color-no-hex` is in ui); no component reads `--warning` as a text colour and every custom property read is a design-tokens name (`tests/accessGate.test.ts`, 2026-10-18). The app itself runs no axe gate (html-validate and eslint-a11y are quality gates) |
 | Build-time configuration | HOLDS — only public values in `VITE_*`; the gate's package and PlatformConfig come from access-gate-client `deployments` (walrus-relay `relayGateConfig`); `.env.example` complete (F21) |
 | Test hooks (Vite) | HOLDS (F17) |
 | Signing UX | HOLDS — the review panel shows network, recipient, fee and fee treasury; the wallet-adapter executor blocks a chain mismatch (0.0.17 also checks the RPC chain id and warns on look-alike wallets); the deploy step replaces the review panel, so a second submit is impossible, and no failure after a publish returns to it (F24); making the package immutable is an explicit, visible policy choice; fixed supply needs a supply above zero (F28); errors show the wallet or chain message |
@@ -497,10 +551,10 @@ on the two helpers closes it; fold it into the next release of this package.
 | --- | --- |
 | Compiler strictness | `strict: true`; `noUncheckedIndexedAccess` is **off** (recorded: the parsers of untrusted data are in the client packages; the licence list parser here checks field types); `skipLibCheck: true` hides library declaration errors only, not this app's sources; `vue-tsc --noEmit` clean |
 | Assertions at trust boundaries | HOLDS — the casts that remain on untrusted JSON (`licenses.ts`, `github.ts`) follow type or shape checks; no `eslint-disable` on those paths |
-| Runtime validation | HOLDS for field shapes (licence list, GitHub create response); size is not bounded before parsing (F34) |
+| Runtime validation | HOLDS — field shapes are checked (licence list, GitHub create response) and size is bounded before parsing (F34) |
 | Money and integer math | HOLDS — amounts are `bigint` in the client; `Number()` is display only |
 | Promise handling | HOLDS — the three empty `catch {}` blocks (`safeIcon`, GitHub error body, URL parse) are on display and error-text paths, not security paths |
-| Network I/O | GAP (F34) for licence and GitHub fetches; Sui and relay calls are the SDK's and walrus-client's (timeout on the challenge request, F15). URLs for GitHub use `encodeURIComponent` per segment; the base must be https |
+| Network I/O | HOLDS (F34) — timeout and size cap on the licence and GitHub fetches; Sui and relay calls are the SDK's and walrus-client's (timeout on the challenge request, F15). URLs for GitHub use `encodeURIComponent` per segment; the base must be https |
 | Encoding | HOLDS — `toBase64Utf8` encodes UTF-8 bytes before `btoa` (test: `héllo—`) |
 | Secrets in output | HOLDS — the token is not in error text (test) or logs |
 | Dynamic code | HOLDS — no `eval`, `new Function` or non-literal `import()` |
@@ -559,20 +613,20 @@ confirmation, result panel, zip, fee delivered).
 
 | Dependency | Pinned version | Liveness dependency? | CVE / audit status | Notes |
 | --- | --- | --- | --- | --- |
-| `@meddleware/sui-token-client` | `^0.0.10` (installed 0.0.10) | every deploy | own audit | pins `@meddleware/sui-token-template` 1.0.8 bytecode |
+| `@meddleware/sui-token-client` | `^0.0.11` (installed 0.0.11) | every deploy | own audit | pins `@meddleware/sui-token-template` 1.0.8 bytecode |
 | `@mysten/move-bytecode-template` | `~0.4.1` (0.4.1) | every deploy (wasm patcher) | Mysten package; no public external audit | accepted (OQ2) |
 | `@mysten/sui` | `^2.34.0` (2.34.0) | every deploy / read | `npm audit` gate 2026-10-09: only F33 | one copy per host; ADR-0001 baseline `^2.33.1` |
 | `@mysten/walrus` | `~1.2.33` | icon upload only | clean | lazy |
-| `@meddleware/walrus-client` / `walrus-relay` | `^0.0.27` / `^0.1.30` | icon upload | own audits | latest published |
+| `@meddleware/walrus-client` / `walrus-relay` | `^0.0.28` / `^0.1.31` | icon upload | own audits | latest published |
 | `@meddleware/wallet-adapter` | peer `>=0.0.12 <0.2.0`, dev `^0.0.17` | all wallet interaction | own audit | host's copy |
-| `@meddleware/access-gate-client` | dev `^0.0.8` | gate id and package for the relay | own audit | `deployments` carry the 2026-10-09 package |
-| `@meddleware/ui`, `design-tokens`, `eslint-config` | `^0.1.31`, `^0.1.9`, `^0.0.2` | — | own audits | — |
+| `@meddleware/access-gate-client` | dev `^0.0.9` | gate id and package for the relay | own audit | `deployments` carry the 2026-10-09 package |
+| `@meddleware/ui`, `design-tokens`, `eslint-config` | `^0.1.31`, `^0.1.10`, `^0.0.2` | — | own audits | — |
 | Vue / Vite / TypeScript / Vitest | 3.5.43 / 8.3.2 / 6.0.3 / 5.0.3 (plugin-vue 6.0.9, vue-tsc 3.3.12) | build | clean | TypeScript 7, vitest 5-major follow-ups declined (decision); Node 24 LTS |
 | Sui full node | public gRPC (override `VITE_RPC_*`) | deploys | Mysten | fails closed |
 | Operator relay (nft-gate) / public relay | testnet | icon upload | own audit / Mysten | deploys unaffected |
 | `api.github.com` | https | optional repo push | — | fails closed (error shown) |
-| `raw.githubusercontent.com/spdx/license-list-data` | https, `main` branch | licence picker and text | — | fails closed; F34 |
-| `static-server` / `node:24-slim` | 0.1.7 / digest-pinned | runtime / build | Trivy at release (F27); Go 1.26.9 | — |
+| `raw.githubusercontent.com/spdx/license-list-data` | https, `main` branch | licence picker and text | — | fails closed; bounded (F34) |
+| `static-server` / `node:24-slim` | 0.1.8 / digest-pinned | runtime / build | Trivy at release (F27); Go 1.26.9 | — |
 
 Install-time code (TS B.TS-2): the lockfile has one lifecycle script, `fsevents` 2.3.3 (dev, macOS only); no
 `allowScripts`, no `overrides`; no `prepare`/`postinstall` in `package.json`. `files` whitelist: `src`
@@ -584,7 +638,7 @@ that signs.
 
 | Authority / secret | Where held | Custody | Gates | Notes |
 | --- | --- | --- | --- | --- |
-| npm publish | GitHub Actions | OIDC trusted publishing + provenance; opt-in `NPM_PUBLISH` | releases | F30 |
+| npm publish | GitHub Actions | OIDC trusted publishing + provenance; opt-in `NPM_PUBLISH`; gated on the full CI workflow | releases | F30 |
 | image publish | GitHub Actions | `QUAY_*` / `DOCKERHUB_*` long-lived secrets (inventory: `OPERATOR_TASKS.md`); cosign keyless | image | digest-pinned in the cluster (F32) |
 | `VITE_FEE_TREASURY_*` | `.env.production`, build args | public addresses | fee recipient | F1 |
 | `SUI_PRIV_TESTNET` | environment `realchain` (not yet set) | GitHub | testnet real-chain e2e | no mainnet key in CI (F20) |
@@ -597,7 +651,7 @@ idempotent registry check; image release = full CI via `workflow_call` + Trivy +
 attestation + provenance, no `continue-on-error` on the public path (F27); `check:bundle` proves the test mode
 is absent; real-chain runs manual, testnet only; Dependabot weekly, grouped, for npm, Docker and Actions
 (`.github/dependabot.yml`); `npm ci` everywhere; npm client pinned (`npm@11.20.0`); `audit-gate.mjs` in CI and
-the npm job (F33).
+the npm job (F33; the npm `verify` is the whole CI workflow, F30).
 
 ### B.VUE-1 Hosting headers
 
@@ -612,7 +666,7 @@ SAMEORIGIN`. Static hosting (`public/_headers`) sends the same policy with `fram
 
 ### B.VUE-2 Build inputs and artifacts / IMG
 
-`node:24-slim@sha256:0e0ff40c…` builder and `static-server:0.1.7@sha256:2e227311…` runtime, both
+`node:24-slim@sha256:0e0ff40c…` builder and `static-server:0.1.8@sha256:e32cf42b…` runtime, both
 digest-pinned (Dependabot Docker group); `npm ci`; `.dockerignore` excludes `node_modules`, `dist`, `.git`,
 `.env.e2e`, `.env*.local`, test output; `npm run build && check:bundle && licenses` run in the build stage so
 a harness leak or empty notices file fails the image build; the runtime stage copies `dist` and the lockfile
@@ -635,12 +689,11 @@ manifests (the image scan runs at release).
 | Boundary / edge | supply / decimals limits (form), network and account switches, stale responses, non-ASCII base64 |
 | Security-relevant | bundle scan for the harness; treasury guard; gated relay proof (live); GitHub token fetch options, clearing and storage (F26) |
 
-Counts (2026-10-09): vitest 59/59 in 11 files (`npm test`); Playwright 10/10 (5 specs, Chromium and
+Counts (2026-10-18, 0.0.36): vitest 95/95 in 13 files (`npm test`); Playwright 10/10 (5 specs, Chromium and
 Firefox, `npm run test:e2e`); `vue-tsc --noEmit`, stylelint, eslint (with `suiBoundary`) and html-validate
 clean; `audit-gate.mjs` 0 not allowlisted. Every test project runs in CI (`node-ci.yml` `ci` and `e2e`
 jobs). Gating variables: `VITE_E2E=1` with `--mode e2e` (mock wallet), `SUI_PRIV` / `E2E_NETWORK` /
-`E2E_MAINNET_CONFIRM` (real-chain harnesses). Missing: tests for the licence helpers' timeout and size
-bounds (F34).
+`E2E_MAINNET_CONFIRM` (real-chain harnesses). The licence and GitHub helpers' timeout and size bounds are tested (F34).
 
 ### C.2 Hermetic vs. live paths
 
@@ -670,7 +723,7 @@ bounds (F34).
 - [x] `suiBoundary` lint adopted — `eslint-config` 0.0.2, lint clean (I4)
 - [x] image: digest-pinned bases, non-root, restricted pod, probes and limits, deployed by digest, signed with SBOM and provenance, scanned before signing (F27)
 - [x] consumed IDs are the latest on-chain version — live bundle carries `access_gate` `0xd7ddaa94…` and gate `0x316f1bf9…` only (B.SC-1)
-- [ ] bounded fetches for the licence and GitHub helpers — F34 (ACCEPTED-RISK; fix in the next release)
+- [x] bounded fetches for the licence and GitHub helpers — F34 RESOLVED 0.0.36 (`boundedFetch.ts`; `licenses.test.ts`, `github.test.ts`; commit pending)
 
 ### pre-mainnet
 
@@ -698,7 +751,7 @@ bounds (F34).
 
 | Location | Network | Value | original-id or published-at | Matches the latest on-chain version |
 | --- | --- | --- | --- | --- |
-| access-gate-client 0.0.8 `deployments` (via walrus-relay `relayGateConfig`) | testnet | `access_gate` `0xd7ddaa94…88c9`, PlatformConfig `0x3f81489d…e7b5` | first publication (original-id = published-at) | Y — access-gate-sui commit `7906954` records it; live bundle contains it and not `0xa55789…` |
+| access-gate-client 0.0.9 `deployments` (via walrus-relay `relayGateConfig`) | testnet | `access_gate` `0xd7ddaa94…88c9`, PlatformConfig `0x3f81489d…e7b5` | first publication (original-id = published-at) | Y — access-gate-sui commit `7906954` records it; live bundle contains it and not `0xa55789…` |
 | `VITE_ACCESS_GATE_ID_TESTNET` (CI variable, baked) | testnet | gate `0x316f1bf9…faddc` | object id | Y — live bundle contains it; not `0xfd6c3b…` |
 | Sui framework | all | `0x1`, `0x2` | system | Y |
 
@@ -708,7 +761,7 @@ Mainnet IDs: not yet populated (mainnet-blocked).
 
 - **VUE-M1–VUE-M9** — hold (Vue categories, B.VUE-1); VUE-M8 holds on both hosting paths (live headers read
   2026-10-09).
-- **TS-M1–TS-M8** — hold except TS-M5 for the licence and GitHub helpers (F34, ACCEPTED-RISK) and the
+- **TS-M1–TS-M8** — hold (TS-M5 since F34, 0.0.36) except the
   `noUncheckedIndexedAccess` note; strict type-check, lint, audit gate, `files` whitelist, install-script
   inventory.
 - **SC-M1, SC-M3, SC-M5, SC-M9, SC-M10** — hold through sui-token-client, wallet-adapter and
@@ -724,8 +777,6 @@ Mainnet IDs: not yet populated (mainnet-blocked).
 
 ## Implementation suggestions (SHOULD / MAY)
 
-- SHOULD add `AbortSignal.timeout` and a body-size check to the licence and GitHub helpers (F34).
-- SHOULD call `node-ci.yml` from `npm-publish.yml` so both releases share one gate (F30).
 - MAY anchor the cosign identity to `docker-publish.yml` on `refs/tags/v*` via `COSIGN_IDENTITY_REGEXP` (F31).
 - MAY run a Trivy config scan of the Dockerfile and manifests in CI.
 - MAY show the coin type's package id next to the explorer link in the result panel.
@@ -734,9 +785,16 @@ Mainnet IDs: not yet populated (mainnet-blocked).
 
 1. **OQ1** Require a reviewer (the maintainer) on the `realchain` environment, so a testnet
    real-chain run needs an explicit approval? (Same choice as nft-gate OQ8.)
+   *Options:* (a) a required reviewer, so every testnet run is approved first; (b) keep the environment limited
+   to `main` (today). *Recommendation:* (a) before any mainnet funding exists; a repository setting only the
+   maintainer can change.
 2. **OQ2** Commission an external review of `@mysten/move-bytecode-template`, or keep the accepted
    reliance on Mysten's programme? *(Accepted 2026-09-24 — maintainer note; recorded here so the
    pre-mainnet gate tracks it.)*
+   *Options:* (a) commission an independent review of the wasm patcher's use (the template check in
+   sui-token-client already pins the bytes); (b) keep relying on Mysten's package and the byte-exact check.
+   *Recommendation:* (a) only if the deployer handles value beyond the 1 SUI fee at mainnet; an external
+   engagement and budget are the maintainer's.
 
 ## Risks
 
@@ -744,7 +802,7 @@ Mainnet IDs: not yet populated (mainnet-blocked).
   mitigated by lockfile pinning and the client's byte-exact template check, not eliminated.
 - **Relay and aggregator liveness** — icon upload only; deploys work without an icon.
 - **Public RPC limits** — deploys depend on the configured full node.
-- **Third-party hosts on optional paths** — the SPDX list on a mutable branch and the GitHub API (F34).
+- **Third-party hosts on optional paths** — the SPDX list on a mutable branch and the GitHub API; both are now bounded in time and size (F34), but a changed licence text still lands in the downloaded `LICENSE`.
 - **Registry credentials** — long-lived quay.io and Docker Hub tokens until the maintainer inventory and
   rotation plan (F32).
 
@@ -794,3 +852,14 @@ the team behind the Sui VM and the Move bytecode format.
   `0xfd6c3b…` are superseded and absent from the live bundle), static-server 0.1.7, headers read live,
   Section D (`e2e:testnet` PASS 2026-10-09 and `suiBoundary` adopted ticked). Counts: 59 unit tests, 10
   Playwright runs. Lens dates reconciled to the registry. `OQ1`/`OQ2` stay open.
+- 2026-10-18 — fix wave (0.0.36, commit pending). Dependencies: sui-token-client 0.0.11, walrus-client 0.0.28,
+  walrus-relay 0.1.31 (adopted: `useAccessGate({ network, gate, getClient })`, `AccessGateCta` terms, no
+  `priceMist`, https hosts), access-gate-client 0.0.9, design-tokens 0.1.10; static-server 0.1.8
+  (`sha256:e32cf42b…4000`, read from quay.io). F34 (bounded licence and GitHub fetches) and F30 (npm publish
+  runs the full CI workflow) RESOLVED; new F35 (price read from the chain, `VITE_ACCESS_GATE_PRICE_MIST_*`
+  removed everywhere) and F36 (access state reset on account change) RESOLVED. F29, F31, F33 stay
+  ACCEPTED-RISK (no single in-repo fix: hosts are operator-configured; the cosign identity is a workspace
+  script override; no patched `braces`); F32 stays DEFERRED (maintainer). OQ1/OQ2 now carry options and a
+  recommendation. Colour-token rule (design-tokens F10) checked: no `color: var(--warning)`, pinned by a
+  test. Counts: 95 unit tests in 13 files, 10 Playwright runs (mocked; `e2e:testnet` not run); type-check,
+  lint:css/js/html, build, `check:bundle`, `check:licenses` and the audit gate clean.

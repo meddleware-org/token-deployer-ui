@@ -4,7 +4,7 @@ import { useWallet } from '@meddleware/wallet-adapter'
 import { buildDeployExecutor } from '../lib/deployExecutor.js'
 import { getReadClient } from '../wallet.js'
 import { useWalrusRelay } from '../composables/useWalrusRelay.js'
-import { useAccessGate } from '@meddleware/walrus-relay'
+import { AccessGateCta, useAccessGate } from '@meddleware/walrus-relay'
 // The flow subpath carries no wasm; it loads the Walrus client lazily when an upload starts.
 import { browserStorage, consumeStorageKey, createGatedAccess, getUploadRetry, runBlobUpload } from '@meddleware/walrus-client/flow'
 import { normalizeSuiAddress } from '@mysten/sui/utils'
@@ -33,8 +33,10 @@ const { account, signPersonalMessage } = useWallet()
 const isWalrusNetwork = computed(() => props.network !== 'localnet')
 const walrusNet: WalrusNetwork = props.network === 'mainnet' ? 'mainnet' : 'testnet'
 
-// NFT-gated relay access (inert when no gate is configured for this network).
-const accessGate = useAccessGate({ gate: ACCESS_GATE[walrusNet], getClient: () => getReadClient(walrusNet) })
+// NFT-gated relay access (inert when no gate is configured for this network). `useAccessGate`
+// throws for a gate that is not the published deployment on `walrusNet`; `ACCESS_GATE` only holds
+// configs built by `relayGateConfig` (or null). The price and payees are read from the chain.
+const accessGate = useAccessGate({ network: walrusNet, gate: ACCESS_GATE[walrusNet], getClient: () => getReadClient(walrusNet) })
 
 const {
   selectedRelayHost,
@@ -68,8 +70,8 @@ async function purchaseAccess(): Promise<void> {
   try {
     const executor = await buildDeployExecutor(props.network as Network)
     await accessGate.purchase(executor, account.value.address)
-  } catch (e) {
-    uploadError.value = e instanceof Error ? e.message : String(e)
+  } catch {
+    // The reason is published in `purchaseError` and shown by the prompt.
   } finally {
     purchasing.value = false
   }
@@ -107,6 +109,7 @@ onMounted(() => {
 watch(
   () => account.value?.address,
   () => {
+    accessGate.reset() // forget the previous wallet's access, uses and held pass
     void refreshAccess()
   },
 )
@@ -342,17 +345,24 @@ function onBrowseSelect(url: string): void {
 
       <!-- NFT-gated relay: the operator relay is live but this wallet lacks the access pass. While
            the operator relay is up it is the only relay offered, so uploading needs a pass. -->
-      <UiNotice v-if="fileName && purchaseAccessAvailable" class="icon-notice">
-        Uploading through this app’s relay requires an access pass.
+      <div v-if="fileName && purchaseAccessAvailable" class="icon-notice">
+        <AccessGateCta
+          :gate-configured="accessGate.gateConfigured"
+          :has-access="accessGate.hasAccess.value"
+          :busy="purchasing"
+          :terms="accessGate.terms.value"
+          :terms-error="accessGate.termsError.value"
+          :purchase-error="accessGate.purchaseError.value"
+          @purchase="purchaseAccess"
+        />
         <button
+          v-if="accessGate.termsError.value && !accessGate.termsLoading.value"
           type="button"
-          class="icon-notice__cta"
-          :disabled="purchasing || !connected"
-          @click="purchaseAccess"
+          @click="accessGate.loadTerms()"
         >
-          {{ purchasing ? 'Purchasing…' : 'Purchase relay access' }}
+          Read the price again
         </button>
-      </UiNotice>
+      </div>
 
       <p v-if="showFreeRelayTip" class="hint icon-notice">
         Tip: select the public relay above to avoid the relay fee.
@@ -404,11 +414,6 @@ function onBrowseSelect(url: string): void {
 
 .icon-notice {
   margin: 0.5rem 0;
-}
-
-.icon-notice__cta {
-  display: block;
-  margin-top: 0.5rem;
 }
 
 .icon-panel {

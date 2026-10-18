@@ -4,6 +4,8 @@
 // directly from the browser (CORS-enabled). The repo is created in the user's
 // account; this app's backend is never involved.
 
+import { GITHUB_TIMEOUT_MS, MAX_GITHUB_RESPONSE_BYTES, fetchWithTimeout, readBoundedJson, readBoundedText } from './boundedFetch.js'
+
 const DEFAULT_API_BASE = 'https://api.github.com'
 
 /**
@@ -93,8 +95,8 @@ function encodePath(path: string): string {
 async function ghError(res: Response, fallback: string): Promise<never> {
   let message = fallback
   try {
-    const body = (await res.json()) as { message?: string }
-    if (body?.message) message = body.message
+    const body = (await readBoundedJson(res, MAX_GITHUB_RESPONSE_BYTES, 'The GitHub error reply')) as { message?: string }
+    if (typeof body?.message === 'string' && body.message) message = body.message
   } catch {
     /* ignore */
   }
@@ -111,19 +113,25 @@ export async function createRepoAndPush(args: CreateRepoAndPushArgs): Promise<Gi
   const apiBase = args.apiBase ?? DEFAULT_API_BASE
   assertHttps(apiBase)
 
-  const createRes = await fetcher(`${apiBase}/user/repos`, {
-    ...SENSITIVE_FETCH,
-    method: 'POST',
-    headers: ghHeaders(args.token),
-    body: JSON.stringify({
-      name: args.repoName,
-      description: args.description ?? '',
-      private: args.isPrivate ?? false,
-      auto_init: false,
-    }),
-  })
+  const createRes = await fetchWithTimeout(
+    fetcher,
+    `${apiBase}/user/repos`,
+    {
+      ...SENSITIVE_FETCH,
+      method: 'POST',
+      headers: ghHeaders(args.token),
+      body: JSON.stringify({
+        name: args.repoName,
+        description: args.description ?? '',
+        private: args.isPrivate ?? false,
+        auto_init: false,
+      }),
+    },
+    GITHUB_TIMEOUT_MS,
+    'GitHub: the repository request',
+  )
   if (!createRes.ok) await ghError(createRes, 'could not create the repository')
-  const repo = (await createRes.json()) as {
+  const repo = (await readBoundedJson(createRes, MAX_GITHUB_RESPONSE_BYTES, 'The GitHub repository reply')) as {
     full_name: string
     html_url: string
     owner: { login: string }
@@ -134,7 +142,8 @@ export async function createRepoAndPush(args: CreateRepoAndPushArgs): Promise<Gi
   const entries = Object.entries(args.files)
   let done = 0
   for (const [path, content] of entries) {
-    const putRes = await fetcher(
+    const putRes = await fetchWithTimeout(
+      fetcher,
       `${apiBase}/repos/${owner}/${encodeURIComponent(repo.name)}/contents/${encodePath(path)}`,
       {
         ...SENSITIVE_FETCH,
@@ -145,8 +154,12 @@ export async function createRepoAndPush(args: CreateRepoAndPushArgs): Promise<Gi
           content: toBase64Utf8(content),
         }),
       },
+      GITHUB_TIMEOUT_MS,
+      `GitHub: adding ${path}`,
     )
     if (!putRes.ok) await ghError(putRes, `could not add ${path}`)
+    // The reply is not used, but an unread body would hold the connection: drain it within the cap.
+    await readBoundedText(putRes, MAX_GITHUB_RESPONSE_BYTES, 'The GitHub file reply').catch(() => undefined)
     args.onProgress?.(++done, entries.length)
   }
 
