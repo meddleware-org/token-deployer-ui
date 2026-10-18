@@ -22,7 +22,7 @@
 **Review date:** 2026-09-24 (first pass) · re-verified 2026-10-02 · re-verified 2026-10-09 · fix wave 2026-10-18
 **Reviewer:** Internal review
 **Severity ceiling:** High — the operator fee is split inside the user's publish transaction, the app patches bytecode the user signs, its icon uploads use the paid, NFT-gated relay, and it can hold the user's GitHub token for one push. It holds no keys and no server.
-**Status:** fix wave 2026-10-18 (0.0.36, commit pending; not yet released)
+**Status:** fix wave 2026-10-18 (0.0.36, commit `0c427e8`; not yet released)
 
 ---
 
@@ -69,7 +69,7 @@ green, `e2e:testnet` PASS 2026-10-09):
   F32 (private-registry mirror jobs, DEFERRED to the maintainer), F33 (one allowlisted dev-tool advisory,
   ACCEPTED-RISK), F34 (licence and GitHub fetches have no timeout or size bound; RESOLVED 2026-10-18, 0.0.36).
 
-Fix wave 2026-10-18 (0.0.36, commit pending; 95 unit tests, 10 Playwright runs, all linters, type-check,
+Fix wave 2026-10-18 (0.0.36, commit `0c427e8`; 95 unit tests, 10 Playwright runs, all linters, type-check,
 build, `check:bundle`, `check:licenses` and the audit gate green):
 
 - **F34 (Low, RESOLVED)** — every licence and GitHub request has a timeout and every reply is read under a
@@ -402,7 +402,7 @@ break white-label builds. Revisit when the hosts are fixed for mainnet.
 
 ### F30 — The npm publish gate is a subset of CI
 
-**Severity:** Low   **Disposition:** RESOLVED (0.0.36, commit pending)
+**Severity:** Low   **Disposition:** RESOLVED (0.0.36, commit `0c427e8`)
 **Where:** `.github/workflows/npm-publish.yml`
 **Issue:** the npm job's `verify` runs `npm ci`, the audit gate, type-check and unit tests, not the full CI
 workflow (linters, build, bundle check, licence check, Playwright). The image release (F27) does run the full
@@ -451,7 +451,7 @@ gate enforces (`audit-gate.mjs` 2026-10-09: 1 high/critical, 0 not allowlisted).
 
 ### F34 — Licence catalogue and GitHub calls have no timeout or size bound
 
-**Severity:** Low   **Disposition:** RESOLVED (0.0.36, commit pending)
+**Severity:** Low   **Disposition:** RESOLVED (0.0.36, commit `0c427e8`)
 **Where:** `src/lib/licenses.ts` (`fetchLicenseList`, `fetchLicenseText`), `src/lib/github.ts`
 **Issue:** the TS lens asks for a timeout on every `fetch` and a size check before parsing untrusted JSON.
 The SPDX list and licence text come from `raw.githubusercontent.com/spdx/license-list-data/main` (a mutable
@@ -475,7 +475,7 @@ catalogue until someone bumps the tag; the id regex and the size cap bound what 
 
 ### F35 — The access-pass price was configured, not read from the chain
 
-**Severity:** Low   **Disposition:** RESOLVED (0.0.36, commit pending; walrus-relay 0.1.31)
+**Severity:** Low   **Disposition:** RESOLVED (0.0.36, commit `0c427e8`; walrus-relay 0.1.31)
 **Where:** `src/config.ts`, `src/components/IconPicker.vue`, `Dockerfile`, `.env.example`, `.github/workflows/docker-publish.yml`
 **Issue:** the gate config carried a build-time `priceMist` (`VITE_ACCESS_GATE_PRICE_MIST_*`) and the purchase
 prompt was a bare "Purchase relay access" button: the user was not shown the exact payment or who receives it
@@ -497,7 +497,7 @@ disabled, no executor is built). `scripts/e2e-walrus-browser.mjs` looks for the 
 
 ### F36 — Access state outlived the wallet that earned it
 
-**Severity:** Info   **Disposition:** RESOLVED (0.0.36, commit pending)
+**Severity:** Info   **Disposition:** RESOLVED (0.0.36, commit `0c427e8`)
 **Where:** `src/components/IconPicker.vue`
 **Issue:** on an account change the picker re-ran the ownership check but kept the previous wallet's access,
 uses and held pass until it answered; on a disconnect it kept them.
@@ -723,7 +723,7 @@ jobs). Gating variables: `VITE_E2E=1` with `--mode e2e` (mock wallet), `SUI_PRIV
 - [x] `suiBoundary` lint adopted — `eslint-config` 0.0.2, lint clean (I4)
 - [x] image: digest-pinned bases, non-root, restricted pod, probes and limits, deployed by digest, signed with SBOM and provenance, scanned before signing (F27)
 - [x] consumed IDs are the latest on-chain version — live bundle carries `access_gate` `0xd7ddaa94…` and gate `0x316f1bf9…` only (B.SC-1)
-- [x] bounded fetches for the licence and GitHub helpers — F34 RESOLVED 0.0.36 (`boundedFetch.ts`; `licenses.test.ts`, `github.test.ts`; commit pending)
+- [x] bounded fetches for the licence and GitHub helpers — F34 RESOLVED 0.0.36 (`boundedFetch.ts`; `licenses.test.ts`, `github.test.ts`; commit `0c427e8`)
 
 ### pre-mainnet
 
@@ -852,7 +852,7 @@ the team behind the Sui VM and the Move bytecode format.
   `0xfd6c3b…` are superseded and absent from the live bundle), static-server 0.1.7, headers read live,
   Section D (`e2e:testnet` PASS 2026-10-09 and `suiBoundary` adopted ticked). Counts: 59 unit tests, 10
   Playwright runs. Lens dates reconciled to the registry. `OQ1`/`OQ2` stay open.
-- 2026-10-18 — fix wave (0.0.36, commit pending). Dependencies: sui-token-client 0.0.11, walrus-client 0.0.28,
+- 2026-10-18 — fix wave (0.0.36, commit `0c427e8`). Dependencies: sui-token-client 0.0.11, walrus-client 0.0.28,
   walrus-relay 0.1.31 (adopted: `useAccessGate({ network, gate, getClient })`, `AccessGateCta` terms, no
   `priceMist`, https hosts), access-gate-client 0.0.9, design-tokens 0.1.10; static-server 0.1.8
   (`sha256:e32cf42b…4000`, read from quay.io). F34 (bounded licence and GitHub fetches) and F30 (npm publish
