@@ -435,12 +435,12 @@ is not changed here and the finding stays MITIGATED until that example is anchor
 ### F32 — Self-hosted registry mirror jobs
 
 **Severity:** Info   **Disposition:** DEFERRED (maintainer; `OPERATOR_TASKS.md` "Image registry credentials — record scope and rotation")
-**Where:** `docker-publish.yml` `*-docker-*-private` jobs
-**Issue:** the mirror jobs are `continue-on-error: true` and fail without registry credentials; the quay.io
+**Where:** `docker-publish.yml` `mirror-private` job
+**Issue:** the mirror job is `continue-on-error: true` (it copies the published, signed image by digest, no rebuild) and fails without registry credentials; the quay.io
 and Docker Hub tokens (`QUAY_TOKEN`, `DOCKERHUB_TOKEN`) are long-lived and not yet inventoried.
 **Impact:** the mirror may lag; a leaked registry token could push an unsigned tag (the cluster pins digests
 and verifies signatures, so it would not run).
-**Remediation / evidence:** the mirror is listed as best-effort and never signs; the public job path has no
+**Remediation / evidence:** the mirror is listed as best-effort and carries the public signatures (same digest); the public job path has no
 `continue-on-error`. The credential inventory (scope, holder, expiry, rotation) is the maintainer item.
 
 ### F33 — One allowlisted dev-tool advisory
@@ -873,3 +873,4 @@ the team behind the Sui VM and the Move bytecode format.
 - 2026-10-19 — dependency-bot status checked (read-only): `.github/dependabot.yml` carries the `ignore` rules and the repository has no open Dependabot pull requests (`gh pr list`, 2026-10-19). Versions, findings and gates were not re-examined in this pass.
   - `Dockerfile` on GitHub `main` now pins the `static-server` base at `0.1.9@sha256:af6cc284…edc72` (merged Dependabot docker PR); this repo was not re-released or redeployed for it, so the deployed image is still built on the 0.1.8 base (the stock default CSP added in 0.1.9 is replaced by this repo's own `CONTENT_SECURITY_POLICY`).
   - Dependabot policy encoded in .github/dependabot.yml (majors declined); open PRs merged 2026-10-19
+  - `docker-publish.yml`: the private rebuild jobs are replaced by one `mirror-private` job that copies the published quay.io image (and its cosign artifacts) to the self-hosted registry by digest and fails unless the digest and the signature match (build once, promote by digest; committed locally, not yet released; the `PRIVATE_REGISTRY_*` credentials are still unset).
