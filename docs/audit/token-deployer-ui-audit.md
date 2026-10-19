@@ -798,7 +798,7 @@ Mainnet IDs: not yet populated (mainnet-blocked).
    pre-mainnet gate tracks it.)*
    *Options:* (a) commission an independent review of the wasm patcher's use (the template check in
    sui-token-client already pins the bytes); (b) keep relying on Mysten's package and the byte-exact check.
-   *Recommendation:* (a) only if the deployer handles value beyond the 1 SUI fee at mainnet; an external
+   *Recommendation:* (a) only if the deployer handles value beyond the deploy fee (2 SUI by default from 0.0.37; 1 SUI before) at mainnet; an external
    engagement and budget are the maintainer's.
 
 ## Risks
@@ -874,3 +874,12 @@ the team behind the Sui VM and the Move bytecode format.
   - `Dockerfile` on GitHub `main` now pins the `static-server` base at `0.1.9@sha256:af6cc284…edc72` (merged Dependabot docker PR); this repo was not re-released or redeployed for it, so the deployed image is still built on the 0.1.8 base (the stock default CSP added in 0.1.9 is replaced by this repo's own `CONTENT_SECURITY_POLICY`).
   - Dependabot policy encoded in .github/dependabot.yml (majors declined); open PRs merged 2026-10-19
   - `docker-publish.yml`: the private rebuild jobs are replaced by one `mirror-private` job that copies the published quay.io image (and its cosign artifacts) to the self-hosted registry by digest and fails unless the digest and the signature match (build once, promote by digest; committed locally, not yet released; the `PRIVATE_REGISTRY_*` credentials are still unset).
+- 2026-10-19 — fees re-derived from the workspace cost model (`docs/economics/COST_MODEL.md`, D57): `FEE_MIST`
+  default 1_000_000_000 → 2_000_000_000 (2 SUI, a value action of a few US$, 50× below the 100 SUI competitor
+  quoted there) and `WALRUS_MAX_TIP_MIST` default 50_000_000 → 5_000_000 (≈ 8× the re-priced relay's worst-case
+  tip). README (including the measured publish gas, ≈ 0.019 SUI on mainnet, versus the 0.5 SUI budget),
+  `.env.example`, Dockerfile, CLAUDE.md and `scripts/e2e-deploy.mjs` updated; two new tests in
+  `tests/iconUpload.test.ts` pin both defaults. Version 0.0.37, commit pending. The repository variables
+  `VITE_FEE_MIST` / `VITE_WALRUS_MAX_TIP_MIST`, if set, override the defaults and are changed by the maintainer.
+  Measured with Node 26.12.0: type-check, lint (css, js, html), 97/97 unit tests, build, bundle check, licence check
+  and the audit gate pass. No disposition changes.

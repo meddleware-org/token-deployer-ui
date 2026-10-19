@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { accessGateDeployment } from '@meddleware/access-gate-client/deployments'
-import { ICON_MAX_BYTES, parseAccessGate, validateIconFile } from '../src/config.js'
+import { FEE_MIST, ICON_MAX_BYTES, WALRUS_MAX_TIP_MIST, parseAccessGate, validateIconFile } from '../src/config.js'
 
 // The upload itself is @meddleware/walrus-client/flow and the relay gate @meddleware/walrus-relay
 // (tested there). These cover what this app adds: the icon checks and its gate configuration.
@@ -47,5 +47,15 @@ describe('parseAccessGate', () => {
 
   it('is ungated on a network without a recorded deployment', () => {
     expect(parseAccessGate('mainnet', { VITE_ACCESS_GATE_ID_MAINNET: '0xgate' })).toBeNull()
+  })
+})
+
+describe('fee defaults (workspace cost model, D57)', () => {
+  it('charges 2 SUI per deploy when VITE_FEE_MIST is unset', () => {
+    expect(FEE_MIST).toBe(2_000_000_000n)
+  })
+
+  it('caps the relay tip at 0.005 SUI when VITE_WALRUS_MAX_TIP_MIST is unset', () => {
+    expect(WALRUS_MAX_TIP_MIST).toBe(5_000_000n)
   })
 })

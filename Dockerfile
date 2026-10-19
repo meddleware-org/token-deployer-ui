@@ -13,7 +13,7 @@
 #   VITE_NETWORK                        — "testnet" | "mainnet"  (default: testnet)
 #   VITE_FEE_TREASURY_TESTNET           — operator treasury for testnet (REQUIRED — build fails without it)
 #   VITE_FEE_TREASURY_MAINNET           — operator treasury for mainnet (REQUIRED — build fails without it)
-#   VITE_FEE_MIST                       — fee in MIST (optional, default 1000000000)
+#   VITE_FEE_MIST                       — fee in MIST (optional, default 2000000000)
 #   VITE_WALRUS_RELAY_TESTNET           — operator relay URL for testnet (optional)
 #   VITE_WALRUS_RELAY_MAINNET           — operator relay URL for mainnet (optional)
 #   VITE_WALRUS_RPC_TESTNET             — gRPC fullnode for Walrus testnet (optional)

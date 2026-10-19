@@ -148,10 +148,10 @@ the relay source `crates/walrus-upload-relay`.)
   relay's tip exceeds this client ceiling ([config.ts](src/config.ts) documents it).
   Set it with generous headroom above the relay tip; raising the relay tip past it
   needs a frontend redeploy.
-- **Tip decisions (2026-09-29, see `docs/audit/LENS_GROUNDING_LOG.md` D1–D3 in the workspace).**
-  Relay tip stays linear `base 1_000_000 MIST + 10 MIST/encoded-KiB` on testnet and mainnet
-  (~0.0016–0.0062 SUI per upload). Every client ceiling is the same `50_000_000` MIST (0.05 SUI,
-  ~8× the worst case at the 100 MiB edge cap). The relay's tip-transaction freshness window is
+- **Tip decisions (2026-09-29, re-derived 2026-10-19; see `docs/audit/LENS_GROUNDING_LOG.md` D1–D3 and D57
+  and `docs/economics/COST_MODEL.md` in the workspace).** Relay tip is linear `base 100_000 MIST + 1 MIST/encoded-KiB`
+  on testnet and mainnet (~0.00016–0.00062 SUI per upload). Every client ceiling is the same `5_000_000` MIST
+  (0.005 SUI, ~8× the worst case at the 100 MiB edge cap). The deploy fee default is 2 SUI. The relay's tip-transaction freshness window is
   one hour (Walrus default).
 - **Gated-relay proof delivery.** The `@mysten/walrus` upload-relay options are only
   `{ host, fetch, timeout, onError }`; the access proof is injected through the `fetch` hook

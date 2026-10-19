@@ -27,9 +27,10 @@ export function explorerObjectUrl(network: Network, id: string): string {
 
 /**
  * The trivial fee (MIST), split from the user's gas coin into the operator
- * treasury inside the publish PTB. Override with VITE_FEE_MIST.
+ * treasury inside the publish PTB. Override with VITE_FEE_MIST. Default 2 SUI,
+ * sized by the workspace cost model (decision D57).
  */
-export const FEE_MIST: bigint = BigInt(env.VITE_FEE_MIST || '1000000000') // 1 SUI default
+export const FEE_MIST: bigint = BigInt(env.VITE_FEE_MIST || '2000000000') // 2 SUI default
 
 const ZERO_ADDR = '0x0000000000000000000000000000000000000000000000000000000000000000'
 
@@ -122,10 +123,10 @@ export const WALRUS_RPC_URLS: Record<WalrusNetwork, string> = {
  * relay's configured tip exceeds this value. It must therefore be set with
  * generous headroom *above* whatever tip the operator's relay charges — raising
  * the relay tip past this ceiling breaks uploads until the frontend is
- * redeployed with a higher value. Default 0.05 SUI: comfortably above a
- * cents-scale icon tip, well below anything a user would object to.
+ * redeployed with a higher value. Default 0.005 SUI: about 8× the operator
+ * relay's worst-case tip (`100_000` MIST + 1 MIST per encoded KiB at 100 MiB).
  */
-export const WALRUS_MAX_TIP_MIST: bigint = BigInt(env.VITE_WALRUS_MAX_TIP_MIST || '50000000')
+export const WALRUS_MAX_TIP_MIST: bigint = BigInt(env.VITE_WALRUS_MAX_TIP_MIST || '5000000')
 
 // ---------------------------------------------------------------------------
 // NFT-gated relay access (optional)

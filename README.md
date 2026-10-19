@@ -66,12 +66,12 @@ host dashboard. See [.env.example](.env.example) for the full list.
 | Variable | Purpose | Default |
 | --- | --- | --- |
 | `VITE_FEE_TREASURY_TESTNET` / `_MAINNET` | Operator treasury that receives the fee. **A production build fails if either is the zero address** (bypass with `VITE_ALLOW_UNSET_TREASURY=1`). | committed operator address |
-| `VITE_FEE_MIST` | Flat fee split from the user's gas coin. | `1000000000` (1 SUI) |
+| `VITE_FEE_MIST` | Flat fee split from the user's gas coin. | `2000000000` (2 SUI) |
 | `VITE_RPC_TESTNET` / `_MAINNET` | gRPC fullnode endpoint (set a paid RPC for production). JSON-RPC-only endpoints do not work. | public fullnodes |
 | `VITE_PUBLISH_GAS_BUDGET` | Publish gas budget (MIST). | `500000000` |
 | `VITE_PUBLIC_URL` | Site origin (no trailing slash) for the canonical URL and Open Graph tags in `index.html`. | `https://sui-token-deployer.meddleware.co.uk` (`.env.production`) |
 | `VITE_WALRUS_RELAY_TESTNET` / `_MAINNET` | Your own upload relay (to collect the tip). Unset → public Mysten relay (earns nothing). | public relay |
-| `VITE_WALRUS_MAX_TIP_MIST` | Client-side max relay tip. **Must exceed your relay's tip** or uploads fail. | `50000000` (0.05 SUI) |
+| `VITE_WALRUS_MAX_TIP_MIST` | Client-side max relay tip. **Must exceed your relay's tip** or uploads fail. | `5000000` (0.005 SUI) |
 | `VITE_ICON_MAX_BYTES` / `VITE_ICON_ALLOWED_TYPES` | Client icon size/type gate (UX only). | `102400` / PNG,JPEG,WebP,SVG |
 
 ## Walrus icon upload relay (optional — for per-upload revenue)
@@ -190,9 +190,11 @@ testnet mode with the RPC pointed at the local node).
 | `VITE_RPC_TESTNET` / `_MAINNET` and `E2E_RPC` | gRPC endpoint for the build (browser) and the node-side verifier. Defaults to the public fullnodes. |
 | `E2E_MAINNET_CONFIRM=1` | **Mainnet only.** Without it the mainnet runner aborts cleanly (fail-safe default) so it can never publish by accident. |
 
-A full fee-charging run needs the key to hold **≥ gas + fee** (~0.5 SUI gas + 1 SUI fee = ~1.5 SUI).
+A full fee-charging run needs the key to hold **≥ gas budget + fee** (0.5 SUI publish gas budget + 2 SUI fee =
+~2.5 SUI). The gas actually spent is far lower: a template publish costs about 0.019 SUI on mainnet and 0.02 SUI on
+testnet (dry run, 2026-10-19).
 For a first dry run you can lower `VITE_FEE_MIST` or leave the treasury unset (`VITE_ALLOW_UNSET_TREASURY=1`)
-so only ~0.5 SUI of gas is needed.
+so only the 0.5 SUI gas budget is needed.
 
 Example (testnet):
 

@@ -45,7 +45,7 @@ const RPC = process.env.E2E_RPC || DEFAULT_RPC[NETWORK]
 const APP_URL = process.env.APP_URL || 'http://localhost:4173'
 const FAUCET = process.env.E2E_FAUCET || 'http://127.0.0.1:9123'
 const FEE_ADDR = process.env.E2E_FEE_ADDR || (NETWORK === 'localnet' ? '0xfee' + '0'.repeat(61) : '')
-const EXPECT_FEE_MIST = BigInt(process.env.E2E_FEE_MIST || '1000000000') // 1 SUI, matches VITE_FEE_MIST default
+const EXPECT_FEE_MIST = BigInt(process.env.E2E_FEE_MIST || '2000000000') // 2 SUI, matches VITE_FEE_MIST default
 const RESULT_TIMEOUT = Number(process.env.E2E_RESULT_TIMEOUT || '60000')
 
 function fail(msg) {
