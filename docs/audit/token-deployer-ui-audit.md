@@ -65,7 +65,7 @@ green, `e2e:testnet` PASS 2026-10-09):
 - The relay gate moved to the 2026-10-09 `access_gate` publication (0.0.29); the live bundle carries only
   the new package and gate. The `suiBoundary` lint is adopted (`eslint-config` 0.0.2) and enforced.
 - Recorded without a fix: F29 (blanket `https:` in `connect-src`, ACCEPTED-RISK), F30 (npm publish gate is
-  a subset of CI; RESOLVED 2026-10-18, 0.0.36), F31 (cosign identity pinned the repository, not the workflow; MITIGATED 2026-10-18: the workspace `verify-digests.sh` default is now workflow-anchored, only the workspace `RUNBOOK.md` example is still repository-wide),
+  a subset of CI; RESOLVED 2026-10-18, 0.0.36), F31 (cosign identity pinned the repository, not the workflow; MITIGATED 2026-10-18, RESOLVED 2026-10-22: the workspace `verify-digests.sh` default and the workspace `RUNBOOK.md` example are both workflow-anchored),
   F32 (private-registry mirror jobs, DEFERRED to the maintainer), F33 (one allowlisted dev-tool advisory,
   ACCEPTED-RISK), F34 (licence and GitHub fetches have no timeout or size bound; RESOLVED 2026-10-18, 0.0.36).
 
@@ -416,7 +416,7 @@ package stays a source mirror, OIDC-published with provenance, tag == version ch
 
 ### F31 — The cosign identity pins the repository, not the workflow
 
-**Severity:** Info   **Disposition:** MITIGATED (2026-10-18: the workspace `verify-digests.sh` default is workflow-anchored; the workspace `RUNBOOK.md` example is still repository-wide; was ACCEPTED-RISK)
+**Severity:** Info   **Disposition:** RESOLVED (2026-10-22: the workspace `verify-digests.sh` default and the workspace `RUNBOOK.md` example are both workflow-anchored; was MITIGATED on 2026-10-18, before that ACCEPTED-RISK)
 **Where:** `bootstrap/images/verify-digests.sh` (workspace), the workspace `RUNBOOK.md` verify command
 **Issue:** the verify command used `--certificate-identity-regexp` `https://github.com/meddleware-org/<name>/`
 (case-insensitive), which accepted any workflow or ref in the repository; this repo's README publishes no
@@ -428,9 +428,7 @@ cluster check would accept.
 (`COSIGN_IDENTITY_REGEXP` still overrides it), so a signature from any other workflow or ref of the repository is
 rejected. All 16 deployed and contingency images verified valid against it on 2026-10-18
 (`STRICT=0 bash bootstrap/images/verify-digests.sh`, 0.0.36 included); 2026-10-09 (0.0.35) was
-checked with the earlier repository-wide identity. This repository publishes no verify command. What remains: the workspace `RUNBOOK.md` release section (the `cosign verify` example for a published image) still shows the
-repository-wide pattern `https://github.com/meddleware-org/<name>/.*`; it is a workspace document outside this repository, so it
-is not changed here and the finding stays MITIGATED until that example is anchored the same way.
+checked with the earlier repository-wide identity. This repository publishes no verify command. **Closed 2026-10-22:** the workspace `RUNBOOK.md` release section's `cosign verify` example (read 2026-10-22, lines 140-145) already uses `--certificate-identity-regexp '^https://github\.com/meddleware-org/<name>/\.github/workflows/docker-publish\.yml@refs/tags/v'`, the same workflow-anchored pattern as `verify-digests.sh`. Nothing in this repository changes.
 
 ### F32 — Self-hosted registry mirror jobs
 
@@ -773,7 +771,7 @@ Mainnet IDs: not yet populated (mainnet-blocked).
   access-gate-client; the others are N/A or the client's.
 - **WAL-M1–WAL-M9** — hold (Walrus categories).
 - **IMG-M1–IMG-M8** — hold (F27, B.VUE-2); IMG-M8's pinned verification identity now holds at workflow level in the cluster check
-  (2026-10-18); the workspace `RUNBOOK.md` example is still repository-wide (F31, MITIGATED).
+  (2026-10-18); the workspace `RUNBOOK.md` example is workflow-anchored too since it was re-read on 2026-10-22 (F31, RESOLVED).
 - **OPS-M7, OPS-M8** — hold after F20 (reviewer per OQ1); OPS-M1 (chain-identifier preflight) is N/A to
   SDK-only harnesses with a fixed RPC per network; the other OPS items concern the harness and hold.
 - **AUTH-M9** — holds (F26): the user's GitHub token is memory-only, sent only to its https origin, cleared
@@ -782,7 +780,7 @@ Mainnet IDs: not yet populated (mainnet-blocked).
 
 ## Implementation suggestions (SHOULD / MAY)
 
-- MAY anchor the workspace `RUNBOOK.md` `cosign verify` example to `docker-publish.yml` on `refs/tags/v*` (F31; the `verify-digests.sh` default already is, 2026-10-18).
+- ~~MAY anchor the workspace `RUNBOOK.md` `cosign verify` example to `docker-publish.yml` on `refs/tags/v*`~~ (F31; done: the example and the `verify-digests.sh` default are both anchored, read 2026-10-22).
 - MAY run a Trivy config scan of the Dockerfile and manifests in CI.
 - MAY show the coin type's package id next to the explorer link in the result panel.
 
@@ -883,3 +881,8 @@ the team behind the Sui VM and the Move bytecode format.
   `VITE_FEE_MIST` / `VITE_WALRUS_MAX_TIP_MIST`, if set, override the defaults and are changed by the maintainer.
   Measured with Node 26.12.0: type-check, lint (css, js, html), 97/97 unit tests, build, bundle check, licence check
   and the audit gate pass. No disposition changes.
+- 2026-10-22 (audit close-out) — release 0.0.38 (`v0.0.38` = `1d6e35f`; `Publish (npm)` and `Publish (Docker)` succeeded). Changes since 0.0.36/0.0.37 recorded here, no disposition change except F31:
+  - **F31 MITIGATED -> RESOLVED:** the workspace `RUNBOOK.md` `cosign verify` example is workflow-anchored (`docker-publish.yml@refs/tags/v`), the same as `verify-digests.sh` (read 2026-10-22).
+  - Dependencies: `@meddleware/walrus-client` `^0.0.30` (the gated flow passes the real challenge expiry; nft-gate-client 0.0.18 rules; walrus-client F26), `@meddleware/walrus-relay` `^0.1.33`, `@meddleware/access-gate-client` `^0.0.10` (a stale indexer head page falls back to the node). Image base: static-server 0.1.11 (Go 1.26.10 standard library, CVE-2026-111943; static-server F13).
+  - Advisory: `markdown-it` updated for GHSA-gfr2-rv44-r23c (commit `1d6e35f`; a transitive dependency, `package-lock.json` only, no `package.json` change).
+  - Not re-run in this pass: the unit tests, the build and the audit gate (the tag's own CI and publish runs succeeded).
