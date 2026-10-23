@@ -1,4 +1,4 @@
-/* Component utility styles for TokenDeployerView and its sub-components.
+/* Component utility styles for TokenIssuanceView and its sub-components.
    Imported by index.ts so these are available in both standalone and library (dashboard) mode.
    Every rule is scoped under `:where(.mw-token-deployer)` so the library injects nothing global
    into an embedding host, while `:where()` keeps the original (element-level) specificity.

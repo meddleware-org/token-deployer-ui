@@ -9,7 +9,7 @@ import pluginA11y from 'eslint-plugin-vuejs-accessibility'
 // are caught in CI.
 export default defineConfigWithVueTs(
   {
-    name: 'token-deployer-ui/files-to-lint',
+    name: 'token-issuance-ui/files-to-lint',
     files: ['**/*.{vue,ts,mts,tsx}'],
   },
 
@@ -20,7 +20,7 @@ export default defineConfigWithVueTs(
   vueTsConfigs.recommended,
 
   {
-    name: 'token-deployer-ui/overrides',
+    name: 'token-issuance-ui/overrides',
     rules: {
       // Accept both valid label-association patterns: a label wrapping its
       // control (nesting) or a label[for] pointing at a control[id]. UiSelect renders a native
@@ -44,7 +44,7 @@ export default defineConfigWithVueTs(
 
   {
     // Tests use deliberately loose typing for mocks/stubs.
-    name: 'token-deployer-ui/test-overrides',
+    name: 'token-issuance-ui/test-overrides',
     files: ['**/*.{test,spec}.{ts,tsx}', 'tests/**', 'e2e/**'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
@@ -55,7 +55,7 @@ export default defineConfigWithVueTs(
     // ConfigForm intentionally edits a parent-owned reactive FormModel in place
     // (the parent passes `:form` and reads the same object back). Converting to
     // defineModel is deferred; the in-place mutation is the current contract.
-    name: 'token-deployer-ui/config-form',
+    name: 'token-issuance-ui/config-form',
     files: ['src/components/ConfigForm.vue'],
     rules: {
       'vue/no-mutating-props': 'off',

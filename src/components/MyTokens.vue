@@ -10,9 +10,9 @@ import {
   suiExplorerUrl,
   type SuiNetwork,
 } from '@meddleware/ui'
-import { listMyTokens, type DeployedToken } from '@meddleware/sui-token-client'
+import { listMyTokens, type DeployedToken } from '@meddleware/token-issuance-client'
 import { getReadClient } from '../wallet.js'
-import type { TokenNetwork as Network } from '@meddleware/sui-token-client'
+import type { TokenNetwork as Network } from '@meddleware/token-issuance-client'
 
 const props = defineProps<{ owner: string | null; network: Network }>()
 

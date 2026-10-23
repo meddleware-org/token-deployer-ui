@@ -3,7 +3,7 @@
 // `setReadClient`, because gRPC-web responses are binary and cannot be faked at the fetch layer.
 import type { SuiGrpcClient } from '@mysten/sui/grpc'
 import { getSuiClient } from '@meddleware/wallet-adapter'
-import type { TokenNetwork } from '@meddleware/sui-token-client'
+import type { TokenNetwork } from '@meddleware/token-issuance-client'
 import { RPC_URLS } from './config.js'
 
 const overrides = new Map<TokenNetwork, SuiGrpcClient>()

@@ -6,7 +6,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 const { createRepoAndPush } = vi.hoisted(() => ({ createRepoAndPush: vi.fn() }))
 vi.mock('../src/lib/github.js', () => ({ createRepoAndPush }))
 vi.mock('../src/lib/licenses.js', () => ({ fetchLicenseText: vi.fn(async () => null) }))
-vi.mock('@meddleware/sui-token-client/package', () => ({ buildPackageFiles: () => ({ 'Move.toml': 'x' }) }))
+vi.mock('@meddleware/token-issuance-client/package', () => ({ buildPackageFiles: () => ({ 'Move.toml': 'x' }) }))
 
 import GithubPush from '../src/components/GithubPush.vue'
 

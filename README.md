@@ -1,18 +1,18 @@
-# @meddleware/token-deployer-ui
+# @meddleware/token-issuance-ui
 
 A browser front-end that lets anyone deploy their own Sui coin — a client-side
-equivalent of [`sui-token-template`](https://github.com/meddleware-org/sui-token-template)'s CLI. **Everything runs in the
+equivalent of [`token-issuance-template-sui`](https://github.com/meddleware-org/token-issuance-template-sui)'s CLI. **Everything runs in the
 browser**: the user's wallet signs and pays gas, and nothing is compiled or
 signed on a server. The user also gets the full, verifiable Move source package,
 and can optionally push it to a new GitHub repo in their own account.
 
 ## How it works
 
-The token logic is [`@meddleware/sui-token-client`](https://github.com/meddleware-org/sui-token-client);
+The token logic is [`@meddleware/token-issuance-client`](https://github.com/meddleware-org/token-issuance-client);
 this app is its UI.
 
 1. The client ships one pre-compiled `sui_token_template` module (generated from the pinned
-   `@meddleware/sui-token-template`) whose metadata fields are distinct named constants.
+   `@meddleware/token-issuance-template-sui`) whose metadata fields are distinct named constants.
 2. In the browser, [`@mysten/move-bytecode-template`](https://www.npmjs.com/package/@mysten/move-bytecode-template)
    decodes it; the identifiers and constant pool are patched to the user's values and it is
    re-encoded ([src/templateWasm.ts](src/templateWasm.ts) points the patcher at the wasm asset).
@@ -22,7 +22,7 @@ this app is its UI.
 4. The same inputs generate a full, downloadable source package that matches the CLI generator's
    output, so the on-chain package is source-verifiable.
 5. Licences are fetched live from SPDX ([src/lib/licenses.ts](src/lib/licenses.ts)); an optional
-   icon upload goes to Walrus (`@meddleware/walrus-client/flow`, from
+   icon upload goes to Walrus (`@meddleware/walrus-storage-client/flow`, from
    [src/components/IconPicker.vue](src/components/IconPicker.vue)); and an optional GitHub push uses
    the user's own token ([src/lib/github.ts](src/lib/github.ts)).
 
@@ -69,7 +69,7 @@ host dashboard. See [.env.example](.env.example) for the full list.
 | `VITE_FEE_MIST` | Flat fee split from the user's gas coin. | `2000000000` (2 SUI) |
 | `VITE_RPC_TESTNET` / `_MAINNET` | gRPC fullnode endpoint (set a paid RPC for production). JSON-RPC-only endpoints do not work. | public fullnodes |
 | `VITE_PUBLISH_GAS_BUDGET` | Publish gas budget (MIST). | `500000000` |
-| `VITE_PUBLIC_URL` | Site origin (no trailing slash) for the canonical URL and Open Graph tags in `index.html`. | `https://sui-token-deployer.meddleware.co.uk` (`.env.production`) |
+| `VITE_PUBLIC_URL` | Site origin (no trailing slash) for the canonical URL and Open Graph tags in `index.html`. | `https://sui-token-issuance.meddleware.co.uk` (`.env.production`) |
 | `VITE_WALRUS_RELAY_TESTNET` / `_MAINNET` | Your own upload relay (to collect the tip). Unset → public Mysten relay (earns nothing). | public relay |
 | `VITE_WALRUS_MAX_TIP_MIST` | Client-side max relay tip. **Must exceed your relay's tip** or uploads fail. | `5000000` (0.005 SUI) |
 | `VITE_ICON_MAX_BYTES` / `VITE_ICON_ALLOWED_TYPES` | Client icon size/type gate (UX only). | `102400` / PNG,JPEG,WebP,SVG |
@@ -139,14 +139,14 @@ tip, so third-party use is *profitable* as long as the tip keeps margin.
 
 ## Keeping the template in sync (single source of truth)
 
-The bytecode and the downloadable source both come from `@meddleware/sui-token-client`, which
-generates them from the exact `@meddleware/sui-token-template` it pins and checks them in CI. After a
+The bytecode and the downloadable source both come from `@meddleware/token-issuance-client`, which
+generates them from the exact `@meddleware/token-issuance-template-sui` it pins and checks them in CI. After a
 template change: release the template, bump it in the client (`npm run gen:template`), release the
 client, then bump the client here.
 
 ## Verification scripts
 
-- `npm run e2e:localnet` in `@meddleware/sui-token-client` — patch → publish → finalize against a
+- `npm run e2e:localnet` in `@meddleware/token-issuance-client` — patch → publish → finalize against a
   local Sui node (node, no browser).
 - `scripts/e2e-deploy.mjs` — the **network-parametrized real-chain deploy e2e** (headless
   browser + injected wallet): drives the full UI, does a REAL publish, waits for real
@@ -157,7 +157,7 @@ client, then bump the client here.
   testnet with an injected wallet (`SUI_PRIV` with SUI + WAL); `E2E_RELAY=operator` exercises the
   NFT-gated relay (pass purchase, consume, signed proof) and asserts the upload went through it.
   The gateway only allows CORS from its own sites, so run the operator case against the dashboard:
-  `E2E_RELAY=operator APP_URL=https://dash.meddleware.co.uk/blockchain E2E_TAB="Token Deployer"
+  `E2E_RELAY=operator APP_URL=https://dash.meddleware.co.uk/blockchain E2E_TAB="Token Issuance"
   node scripts/e2e-walrus-browser.mjs` (a local build falls back to the public relay). Manual only —
   it spends real funds (testnet WAL: `walrus get-wal`).
 

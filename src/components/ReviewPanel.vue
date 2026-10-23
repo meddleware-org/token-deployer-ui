@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { TokenConfig, TokenNetwork as Network } from '@meddleware/sui-token-client'
+import type { TokenConfig, TokenNetwork as Network } from '@meddleware/token-issuance-client'
 import { FEE_MIST, FEE_TREASURY, isFeeConfigured } from '../config.js'
 import { UiNotice } from '@meddleware/ui'
 
 const props = defineProps<{ config: TokenConfig; network: Network }>()
 defineEmits<{ (e: 'back'): void; (e: 'confirm'): void }>()
 
-// Mirrors TokenDeployerView: the fee is only charged when a real treasury is configured.
+// Mirrors TokenIssuanceView: the fee is only charged when a real treasury is configured.
 const feeCharged = isFeeConfigured(props.network)
 const feeSui = Number(FEE_MIST) / 1e9
 const treasury = FEE_TREASURY[props.network]

@@ -4,10 +4,10 @@
 // URL that serves the exact uploaded image.
 //
 //   APP_URL / E2E_TAB   the app to drive (default the local preview). The gateway Worker only
-//                       allows CORS from its ALLOWED_ORIGINS (sui-walrus., dash.), so a local
+//                       allows CORS from its ALLOWED_ORIGINS (sui-walrus-storage., dash.), so a local
 //                       build cannot reach the operator relay and falls back to the public one.
 //                       To test the gated relay, run against the dashboard:
-//                       APP_URL=https://dash.meddleware.co.uk/blockchain E2E_TAB="Token Deployer"
+//                       APP_URL=https://dash.meddleware.co.uk/blockchain E2E_TAB="Token Issuance"
 //   E2E_RELAY=public    (default) the free public relay — register → upload → certify.
 //   E2E_RELAY=operator  the NFT-gated operator relay — buys an access pass if the account has
 //                       none, then consume (single-use gates) + signed access proof → register →
@@ -92,7 +92,7 @@ async function main() {
   if (!(await uploadTab.isChecked())) fail('the "Upload to Walrus" source did not select')
   await page.locator('#walrus-file').setInputFiles(icon)
 
-  // Relay policy (walrus-relay useWalrusRelay, anti-bypass): while the operator relay is
+  // Relay policy (walrus-storage-kit useWalrusRelay, anti-bypass): while the operator relay is
   // configured and reachable it is the ONLY option — a wallet without a pass gets the purchase CTA
   // instead, and the free public relay is withheld. The public relay is offered only when no
   // operator relay is configured or it is down, so E2E_RELAY=public needs a build without
@@ -153,7 +153,7 @@ async function main() {
 
   const hosts = [...relayHosts]
   console.log('upload relay host(s):', hosts.join(', ') || '(none seen)')
-  const operatorHost = 'sui-walrus-relay-testnet.meddleware.co.uk'
+  const operatorHost = 'sui-walrus-storage-relay-testnet.meddleware.co.uk'
   if (RELAY === 'operator' && !hosts.includes(operatorHost)) fail(`upload did not go through ${operatorHost}`)
   if (RELAY === 'public' && hosts.includes(operatorHost)) fail('upload went through the operator relay')
 

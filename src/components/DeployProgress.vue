@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { DeployStep } from '@meddleware/sui-token-client/deploy'
+import type { DeployStep } from '@meddleware/token-issuance-client/deploy'
 
 const ORDER: { key: DeployStep; label: string }[] = [
   { key: 'patching', label: 'Preparing the module' },

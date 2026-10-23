@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { hasAllowedIconScheme, TOKEN_LIMITS } from '@meddleware/sui-token-client'
+import { hasAllowedIconScheme, TOKEN_LIMITS } from '@meddleware/token-issuance-client'
 import { validateForm, deriveStructName, isValid } from '../src/lib/validation.js'
 
 const MAX_IDENT_LEN = TOKEN_LIMITS.identifier

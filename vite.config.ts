@@ -31,7 +31,7 @@ function assertTreasuryConfigured(env: Record<string, string>): void {
 // The move-bytecode-template package ships a .wasm that must be served as an
 // asset; `wasm` is excluded from dep-optimization so its URL import resolves.
 /** Public origin used for the canonical URL + Open Graph tags (`%VITE_PUBLIC_URL%` in index.html). */
-const DEFAULT_PUBLIC_URL = 'https://sui-token-deployer.meddleware.co.uk'
+const DEFAULT_PUBLIC_URL = 'https://sui-token-issuance.meddleware.co.uk'
 
 /**
  * VITE_E2E=1 compiles in a mock wallet, a stubbed Sui client and `window.__*` test hooks. It is

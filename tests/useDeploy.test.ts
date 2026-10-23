@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
-import type { Executor } from '@meddleware/sui-token-client/deploy'
-import type { TokenConfig } from '@meddleware/sui-token-client'
+import type { Executor } from '@meddleware/token-issuance-client/deploy'
+import type { TokenConfig } from '@meddleware/token-issuance-client'
 import { useDeploy } from '../src/composables/useDeploy.js'
 
 const sender = '0x' + '1'.repeat(64)

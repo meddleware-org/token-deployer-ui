@@ -9,8 +9,8 @@ import {
   type DeployStep,
   type Executor,
   type PendingFinalize,
-} from '@meddleware/sui-token-client/deploy'
-import type { PublishResult, TokenNetwork } from '@meddleware/sui-token-client'
+} from '@meddleware/token-issuance-client/deploy'
+import type { PublishResult, TokenNetwork } from '@meddleware/token-issuance-client'
 import { buildDeployExecutor } from '../lib/deployExecutor.js'
 import { extractErrorMessage } from '../lib/errors.js'
 

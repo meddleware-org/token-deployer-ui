@@ -5,7 +5,7 @@ on:
       - "v*"
 
 env:
-  IMAGE: token-deployer-ui
+  IMAGE: token-issuance-ui
 
 permissions:
   contents: read

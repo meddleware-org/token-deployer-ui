@@ -1,4 +1,4 @@
-# Real-chain e2e for token-deployer-ui — TESTNET ONLY.
+# Real-chain e2e for token-issuance-ui — TESTNET ONLY.
 #
 # MANUAL ONLY (workflow_dispatch). These runs publish a REAL testnet token / store a REAL testnet blob
 # and spend testnet SUI (and WAL), so they never run on push or pull_request. The job runs in the
@@ -13,7 +13,7 @@
 #   FEE_TREASURY_TESTNET — operator treasury address (fee recipient).
 #   RPC_TESTNET (optional) — gRPC endpoint override (defaults to the public fullnode).
 
-name: token-deployer real-chain e2e
+name: token-issuance real-chain e2e
 
 on:
   workflow_dispatch:

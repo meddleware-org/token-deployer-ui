@@ -2,13 +2,13 @@
 
 ## Scope
 
-This policy covers `@meddleware/token-deployer-ui`: the browser app (and embeddable view) that lets a
+This policy covers `@meddleware/token-issuance-ui`: the browser app (and embeddable view) that lets a
 user publish their own Sui coin from their wallet, pay the operator fee, and download the matching
 Move source package. It covers `src/**`, the build configuration and the real-chain harness scripts.
-The template artefacts, patching and transaction building are `@meddleware/sui-token-client`'s
+The template artefacts, patching and transaction building are `@meddleware/token-issuance-client`'s
 (report those in that repository).
 
-It does not cover `@meddleware/sui-token-template` (its own policy), the Walrus network, the
+It does not cover `@meddleware/token-issuance-template-sui` (its own policy), the Walrus network, the
 NFT-gated upload relay (`nft-gate`), or the user's wallet.
 
 ## Security model (invariants)

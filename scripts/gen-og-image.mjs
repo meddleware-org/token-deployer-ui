@@ -20,7 +20,7 @@ p{font-size:34px;line-height:1.35;color:#aebfd6;max-width:960px}
 <h1>Create your own <span class="accent">Sui coin</span><br>in the browser</h1>
 <p>Your wallet signs and pays gas &mdash; nothing is compiled or signed on a server. Keep the full, verifiable source package.</p>
 <div class="row"><div class="chip">No server</div><div class="chip">No custody</div><div class="chip">Full source included</div></div>
-<div class="url">sui-token-deployer.meddleware.co.uk</div>
+<div class="url">sui-token-issuance.meddleware.co.uk</div>
 </body></html>`
 
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome' })

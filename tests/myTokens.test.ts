@@ -10,7 +10,7 @@ vi.mock('@meddleware/ui', () => ({
 }))
 
 const { listMyTokens } = vi.hoisted(() => ({ listMyTokens: vi.fn() }))
-vi.mock('@meddleware/sui-token-client', () => ({ listMyTokens }))
+vi.mock('@meddleware/token-issuance-client', () => ({ listMyTokens }))
 
 import MyTokens from '../src/components/MyTokens.vue'
 

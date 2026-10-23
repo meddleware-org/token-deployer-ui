@@ -21,9 +21,9 @@ import { emptyForm, toTokenConfig } from '../lib/form.js'
 import { validateForm } from '../lib/validation.js'
 import type { FormErrors } from '../lib/validation.js'
 import { useDeploy } from '../composables/useDeploy.js'
-import { browserStorage } from '@meddleware/walrus-client/flow'
+import { browserStorage } from '@meddleware/walrus-storage-client/flow'
 import { FEE_MIST, FEE_TREASURY, PUBLISH_GAS_BUDGET, isFeeConfigured } from '../config.js'
-import type { TokenNetwork as Network } from '@meddleware/sui-token-client'
+import type { TokenNetwork as Network } from '@meddleware/token-issuance-client'
 
 type Step = 'identity' | 'token' | 'settings' | 'review' | 'deploying' | 'incomplete' | 'published' | 'done'
 
@@ -206,14 +206,14 @@ function restart(): void {
     <AppTabNav
       v-model="activeTab"
       :tabs="TABS"
-      id-prefix="token-deployer"
+      id-prefix="token-issuance"
       aria-label="Sections"
       class="deployer-tabs"
     />
 
     <!-- The tab list and its panel always render (the selected tab controls a live panel); the wallet
          prompt replaces only the panel's content until a wallet is connected. -->
-    <UiTabPanel id-prefix="token-deployer" :tab="activeTab">
+    <UiTabPanel id-prefix="token-issuance" :tab="activeTab">
       <WalletGuard message="Connect a Sui wallet to deploy your token.">
         <template v-if="activeTab === 'deploy'">
           <UiStepper :steps="STEPS" :model-value="stepIndex" @update:model-value="onStepperBack" />

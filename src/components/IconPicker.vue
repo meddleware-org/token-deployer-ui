@@ -4,14 +4,14 @@ import { useWallet } from '@meddleware/wallet-adapter'
 import { buildDeployExecutor } from '../lib/deployExecutor.js'
 import { getReadClient } from '../wallet.js'
 import { useWalrusRelay } from '../composables/useWalrusRelay.js'
-import { AccessGateCta, useAccessGate } from '@meddleware/walrus-relay'
+import { AccessGateCta, useAccessGate } from '@meddleware/walrus-storage-kit'
 // The flow subpath carries no wasm; it loads the Walrus client lazily when an upload starts.
-import { browserStorage, consumeStorageKey, createGatedAccess, getUploadRetry, runBlobUpload } from '@meddleware/walrus-client/flow'
+import { browserStorage, consumeStorageKey, createGatedAccess, getUploadRetry, runBlobUpload } from '@meddleware/walrus-storage-client/flow'
 import { normalizeSuiAddress } from '@mysten/sui/utils'
 import { ICON_EPOCHS } from '../lib/walrus-constants.js'
 import { ACCESS_GATE, ICON_MAX_BYTES, WALRUS_MAX_TIP_MIST, WALRUS_RPC_URLS, validateIconFile } from '../config.js'
 import type { WalrusNetwork } from '../config.js'
-import type { TokenNetwork as Network } from '@meddleware/sui-token-client'
+import type { TokenNetwork as Network } from '@meddleware/token-issuance-client'
 import { UiNotice, UiFieldHint, UiSegmentedControl } from '@meddleware/ui'
 import WalrusBlobBrowser from './WalrusBlobBrowser.vue'
 import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url'
@@ -289,7 +289,7 @@ function onBrowseSelect(url: string): void {
         />
         <!-- No relay is offered while the operator relay's health or pass check is pending, or
              while a gated relay is up and this wallet has no pass: upload is blocked then
-             (walrus-relay useWalrusRelay policy). -->
+             (walrus-storage-kit useWalrusRelay policy). -->
         <button
           type="button"
           :disabled="uploading || !connected || !fileName || availableRelays.length === 0"

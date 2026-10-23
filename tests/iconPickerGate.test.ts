@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 
-// The icon picker against a gated operator relay (walrus-relay 0.1.31): the pass price is read from the
+// The icon picker against a gated operator relay (walrus-storage-kit 0.1.31): the pass price is read from the
 // chain, the purchase button stays disabled until it is read, and no wallet prompt opens without it.
 
 vi.mock('@meddleware/ui', () => ({
@@ -36,7 +36,7 @@ vi.mock('@meddleware/wallet-adapter', () => ({
 vi.mock('../src/wallet.js', () => ({ getReadClient: () => readClient }))
 vi.mock('../src/lib/deployExecutor.js', () => ({ buildDeployExecutor }))
 vi.mock('../src/components/WalrusBlobBrowser.vue', () => ({ default: { name: 'WalrusBlobBrowser', template: '<div />' } }))
-vi.mock('@meddleware/walrus-client/flow', () => ({
+vi.mock('@meddleware/walrus-storage-client/flow', () => ({
   browserStorage: vi.fn(),
   consumeStorageKey: vi.fn(),
   createGatedAccess: vi.fn(),

@@ -1,4 +1,4 @@
-// The form layer: turns the token rules from @meddleware/sui-token-client into per-field messages for
+// The form layer: turns the token rules from @meddleware/token-issuance-client into per-field messages for
 // the UI. The rules themselves (identifiers, safe text, icon schemes, decimals, supply bounds) live
 // in the client, which also enforces them with assertTokenConfig before any deploy or generation.
 
@@ -12,9 +12,9 @@ import {
   validateModuleName,
   validatePackageName,
   type TokenConfig,
-} from '@meddleware/sui-token-client'
+} from '@meddleware/token-issuance-client'
 
-export { deriveStructName, parseSupply } from '@meddleware/sui-token-client'
+export { deriveStructName, parseSupply } from '@meddleware/token-issuance-client'
 
 const SUI_ADDRESS = /^0x[0-9a-fA-F]{64}$/
 

@@ -1,9 +1,9 @@
-# CLAUDE.md — `token-deployer-ui`
+# CLAUDE.md — `token-issuance-ui`
 
-`@meddleware/token-deployer-ui` is a Vue 3 + Vite browser app that lets any user deploy
+`@meddleware/token-issuance-ui` is a Vue 3 + Vite browser app that lets any user deploy
 their own Sui coin fully client-side (their wallet signs + pays gas + a trivial fee to
 the operator treasury) and download a matching source package. It is the browser
-equivalent of the `@meddleware/sui-token-template` Move package (from which it derives
+equivalent of the `@meddleware/token-issuance-template-sui` Move package (from which it derives
 its pre-compiled bytecode and source templates). See the repo-root
 [CLAUDE.md](../../../../CLAUDE.md) for context and [README.md](README.md) for the
 user/operator guide.
@@ -13,16 +13,16 @@ user/operator guide.
 This package ships as both a **standalone SPA** and an **embeddable library component**:
 
 - **Standalone SPA** (`npm run dev` / `npm run build`): `src/main.ts` mounts `App.vue`, which
-  is a thin shell that renders `WalletBar` + `TokenDeployerView`. All deploy logic lives in
-  `TokenDeployerView` — `App.vue` contains no state.
-- **Library component** (consumed by `@meddleware/dashboard`): `src/index.ts` exports
-  `TokenDeployerView`, which is imported via the `exports["."]` entry in `package.json`. The
+  is a thin shell that renders `WalletBar` + `TokenIssuanceView`. All deploy logic lives in
+  `TokenIssuanceView` — `App.vue` contains no state.
+- **Library component** (consumed by `@meddleware/dashboard-ui`): `src/index.ts` exports
+  `TokenIssuanceView`, which is imported via the `exports["."]` entry in `package.json`. The
   dashboard's Vite build resolves TypeScript source directly — no separate lib build step.
   The dashboard supplies the wallet connection via `@meddleware/wallet-adapter`'s shared
-  module singleton; `TokenDeployerView` reads `useWallet()` / `useNetwork()` from it and is
+  module singleton; `TokenIssuanceView` reads `useWallet()` / `useNetwork()` from it and is
   wrapped in `WalletGuard` so it shows a connect prompt when no wallet is connected.
 
-The pattern mirrors `@meddleware/walrus-ui`, `@meddleware/seal-ui`, and
+The pattern mirrors `@meddleware/walrus-storage-ui`, `@meddleware/sealed-storage-ui`, and
 `@meddleware/access-gate-ui`. See the dashboard `CLAUDE.md` for the invariant: every tool view
 must **not** render its own wallet bar, header, or footer when embedded.
 
@@ -31,7 +31,7 @@ TreasuryCap, MetadataCap, Currency ref). `src/lib/deployExecutor.ts` wraps the w
 `buildExecutor(network, rpcUrl, { client: getReadClient(network) })` — signing, the chain check and
 the account binding are the adapter's; execution goes through this app's client (`src/wallet.ts`,
 which E2E builds stub) — and calls `signAndExecute(tx, { include: { effects, objectTypes } })`.
-`toSuiTxResult` (`@meddleware/sui-token-client/deploy`) maps the result onto the shape
+`toSuiTxResult` (`@meddleware/token-issuance-client/deploy`) maps the result onto the shape
 `extractPublishResult` reads. Do not reintroduce signing code here.
 
 **gRPC only.** Public fullnodes have deprecated JSON-RPC; every chain call (app and `scripts/`)
@@ -43,7 +43,7 @@ the `fetch` layer.
 
 ## Architecture (the money/parity paths matter most)
 
-The token logic lives in [`@meddleware/sui-token-client`](https://github.com/meddleware-org/sui-token-client)
+The token logic lives in [`@meddleware/token-issuance-client`](https://github.com/meddleware-org/token-issuance-client)
 (workspace B7); this app keeps the UI, the wallet wiring and the form messages.
 
 | Layer | Where |
@@ -67,7 +67,7 @@ The token logic lives in [`@meddleware/sui-token-client`](https://github.com/med
 ## Invariants (do not break)
 
 1. **Bytecode ↔ source parity** is the client's job: its artefact is generated from the exact
-   `@meddleware/sui-token-template` it pins and checked in CI (`check:template`). To pick up a
+   `@meddleware/token-issuance-template-sui` it pins and checked in CI (`check:template`). To pick up a
    template change, release the client and bump it here — never vendor template files into this app.
 2. **Injection safety is layered.** `validation.ts` gates the form; the client re-asserts every rule
    (`assertTokenConfig`) before patching, publishing or generating. Never bypass the client's checks.
@@ -123,9 +123,9 @@ the relay source `crates/walrus-upload-relay`.)
   separate public **aggregator**. The tip only needs to cover the relay's
   ingress + fan-out egress + RPC lookups.
 - **NFT / usage-ticket per-wallet gating is IMPLEMENTED (2026-08-05)** via the standalone
-  `nft-gate` project: an `nft-gate` gateway fronts the operator relay and admits only
+  `nft-gate` project: an access-gate gateway fronts the operator relay and admits only
   holders of an `access_gate` NFT. The app gates the operator-relay option on ownership
-  (walrus-relay `useAccessGate`, built with `relayGateConfig` so the package and PlatformConfig are
+  (walrus-storage-kit `useAccessGate`, built with `relayGateConfig` so the package and PlatformConfig are
   the published deployment; `useAccessGate({ network, gate, getClient })` throws for any other config),
   offers a permissionless purchase CTA (`AccessGateCta`) that shows the price, payees and platform share
   read from the chain (never configured at build time), and attaches
@@ -135,7 +135,7 @@ the relay source `crates/walrus-upload-relay`.)
   The standalone site is gated too (workspace D21, 2026-10-01): its build carries the
   `VITE_ACCESS_GATE_*_TESTNET` variables and the gateway allows its origin.
 - **Per-wallet rate limiting** — previously rejected at the edge (which can't resolve the
-  wallet), it is now enforced by the `nft-gate` gateway *after* verification. Keep a per-IP
+  wallet), it is now enforced by the access-gate gateway *after* verification. Keep a per-IP
   edge limit as a coarse pre-auth control.
 - **Autonomous price-fed tip tuner DEFERRED** — the relay reads its tip only at
   **startup** (no hot-reload/SIGHUP), so adjusting = rewrite YAML + restart. That's a
@@ -155,11 +155,11 @@ the relay source `crates/walrus-upload-relay`.)
   one hour (Walrus default).
 - **Gated-relay proof delivery.** The `@mysten/walrus` upload-relay options are only
   `{ host, fetch, timeout, onError }`; the access proof is injected through the `fetch` hook
-  (`relayAuthFetch` in `@meddleware/walrus-client`, relay origin only, https only). A `headers`
+  (`relayAuthFetch` in `@meddleware/walrus-storage-client`, relay origin only, https only). A `headers`
   option would be silently dropped. The upload is `runBlobUpload` from
-  `@meddleware/walrus-client/flow`; for the gated relay `createGatedAccess` persists the
+  `@meddleware/walrus-storage-client/flow`; for the gated relay `createGatedAccess` persists the
   single-use consume digest (`mw:walrus:consume:<network>:<gate>:<address>` — the same key as
-  walrus-ui, so embedded in the dashboard the two tools share one redemption token for a gate) and
+  walrus-storage-ui, so embedded in the dashboard the two tools share one redemption token for a gate) and
   reuses it until the gateway reports it redeemed.
 - **Client-side icon size/type limits are UX only — NOT security.** The authoritative
   cap is a hard request-body limit at the edge (the relay otherwise buffers up to a
@@ -172,7 +172,7 @@ Three distinct categories — do not collapse them (repo convention):
 
 - **Pure unit (Vitest, `npm test`):** form validation, licenses, github, errors, the deploy
   executor, wallet and relay-gating composables. Patching, PTBs, result parsing, deploy
-  orchestration and package generation are tested in `@meddleware/sui-token-client`.
+  orchestration and package generation are tested in `@meddleware/token-issuance-client`.
 - **Mocked-RPC UI e2e (Playwright, `npm run test:e2e`):** wallet/form/publish flow against the
   stub Sui client + mock wallet in [src/main.ts](src/main.ts). Specs live in
   [e2e/app.spec.ts](e2e/app.spec.ts): connect/disconnect, no-wallet notice, network choice, identity
@@ -206,9 +206,9 @@ Three distinct categories — do not collapse them (repo convention):
   (`npm run e2e:walrus`, testnet only) uploads a generated icon through the widget via the public
   relay, or with `E2E_RELAY=operator` through the NFT-gated relay (buys a pass if needed, consume +
   signed proof), and checks the aggregator serves the exact bytes and which relay host was used.
-  While the operator relay is up it is the only relay offered (walrus-relay policy), so the public
+  While the operator relay is up it is the only relay offered (walrus-storage-kit policy), so the public
   case needs a build without `VITE_WALRUS_RELAY_TESTNET`; the operator case must run on an origin
-  the gateway allows (`APP_URL=https://dash.meddleware.co.uk/blockchain E2E_TAB="Token Deployer"`).
+  the gateway allows (`APP_URL=https://dash.meddleware.co.uk/blockchain E2E_TAB="Token Issuance"`).
   Passed 2026-10-01 through the operator relay. Both harnesses share
   [scripts/e2e-wallet.mjs](scripts/e2e-wallet.mjs): the injected wallet forwards transaction JSON
   and node rebuilds + signs it with its own client (plus `sui:signPersonalMessage`), so they run

@@ -1,6 +1,6 @@
 name: Publish (npm)
 
-# Publishes the app's library entry (@meddleware/token-deployer-ui) to npmjs on a v* tag, so it can be
+# Publishes the app's library entry (@meddleware/token-issuance-ui) to npmjs on a v* tag, so it can be
 # embedded by the dashboard. npm is a SECONDARY output here (the app also ships a
 # container image via docker-publish.yml), so publication is opt-in via the
 # repository variable NPM_PUBLISH and gated on the full CI workflow (`verify`).
@@ -22,7 +22,7 @@ jobs:
     uses: ./.github/workflows/node-ci.yml
 
   publish-npm:
-    name: npmjs (@meddleware/token-deployer-ui)
+    name: npmjs (@meddleware/token-issuance-ui)
     needs: verify
     runs-on: ubuntu-latest
     permissions:

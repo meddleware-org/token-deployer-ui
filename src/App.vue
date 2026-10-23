@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import WalletBar from './components/WalletBar.vue'
-import TokenDeployerView from './components/TokenDeployerView.vue'
+import TokenIssuanceView from './components/TokenIssuanceView.vue'
 import { ColorModeControl, useColorMode } from '@meddleware/ui'
 
 const { mode: colorMode, set: setColorMode } = useColorMode('system')
@@ -24,7 +24,7 @@ const { mode: colorMode, set: setColorMode } = useColorMode('system')
 
     <WalletBar />
 
-    <TokenDeployerView />
+    <TokenIssuanceView />
 
     <footer v-once class="page-footer">
       <p>

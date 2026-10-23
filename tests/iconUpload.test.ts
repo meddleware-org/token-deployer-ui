@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { accessGateDeployment } from '@meddleware/access-gate-client/deployments'
 import { FEE_MIST, ICON_MAX_BYTES, WALRUS_MAX_TIP_MIST, parseAccessGate, validateIconFile } from '../src/config.js'
 
-// The upload itself is @meddleware/walrus-client/flow and the relay gate @meddleware/walrus-relay
+// The upload itself is @meddleware/walrus-storage-client/flow and the relay gate @meddleware/walrus-storage-kit
 // (tested there). These cover what this app adds: the icon checks and its gate configuration.
 
 describe('validateIconFile (UX/cost gate — not a security control)', () => {
