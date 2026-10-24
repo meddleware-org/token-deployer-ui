@@ -123,7 +123,7 @@ the relay source `crates/walrus-upload-relay`.)
   separate public **aggregator**. The tip only needs to cover the relay's
   ingress + fan-out egress + RPC lookups.
 - **NFT / usage-ticket per-wallet gating is IMPLEMENTED (2026-08-05)** via the standalone
-  `nft-gate` project: an access-gate gateway fronts the operator relay and admits only
+  `access-gate-gateway` project: an access-gate gateway fronts the operator relay and admits only
   holders of an `access_gate` NFT. The app gates the operator-relay option on ownership
   (walrus-storage-kit `useAccessGate`, built with `relayGateConfig` so the package and PlatformConfig are
   the published deployment; `useAccessGate({ network, gate, getClient })` throws for any other config),

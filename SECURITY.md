@@ -9,7 +9,7 @@ The template artefacts, patching and transaction building are `@meddleware/token
 (report those in that repository).
 
 It does not cover `@meddleware/token-issuance-template-sui` (its own policy), the Walrus network, the
-NFT-gated upload relay (`nft-gate`), or the user's wallet.
+NFT-gated upload relay (`access-gate-gateway`), or the user's wallet.
 
 ## Security model (invariants)
 
